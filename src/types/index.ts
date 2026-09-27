@@ -144,6 +144,7 @@ export interface VisitRecord {
   isCurrentlyInside: boolean;
   isOutToSmoke: boolean;
   smokeExitTime?: string;
+  entryType?: 'arrival' | 'return';
   responsibleStaffId: string;
   responsibleStaffName: string;
 }

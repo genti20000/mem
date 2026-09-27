@@ -146,6 +146,10 @@ export const INITIAL_MEMBERS: Member[] = [
       acceptedAt: hoursAgo(200),
       applicantEmail: 'seb@bartermini.london',
     },
+    notes: 'Cocktail director profile & business register confirmed.',
+    faceDescriptor: generateSeedFaceDescriptor(2),
+    expressFacialConsent: true,
+    expressFacialConsentTimestamp: hoursAgo(200),
   },
   {
     id: 'mem-003',
@@ -169,6 +173,9 @@ export const INITIAL_MEMBERS: Member[] = [
       acceptedAt: hoursAgo(300),
       applicantEmail: 'elena.rostova@ronniescotts.co.uk',
     },
+    faceDescriptor: generateSeedFaceDescriptor(3),
+    expressFacialConsent: true,
+    expressFacialConsentTimestamp: hoursAgo(300),
   },
   {
     id: 'mem-004',
@@ -192,6 +199,9 @@ export const INITIAL_MEMBERS: Member[] = [
       acceptedAt: hoursAgo(90),
       applicantEmail: 'm.sterling@grouchoclub.com',
     },
+    faceDescriptor: generateSeedFaceDescriptor(4),
+    expressFacialConsent: true,
+    expressFacialConsentTimestamp: hoursAgo(90),
   },
   {
     id: 'mem-005',
@@ -214,6 +224,9 @@ export const INITIAL_MEMBERS: Member[] = [
       acceptedAt: hoursAgo(150),
       applicantEmail: 'harriet@swiftsoho.com',
     },
+    faceDescriptor: generateSeedFaceDescriptor(5),
+    expressFacialConsent: true,
+    expressFacialConsentTimestamp: hoursAgo(150),
   },
   // Application currently in 48-Hour Waiting Period (Applied 35 hours ago, 13 hours left)
   {

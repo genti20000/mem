@@ -21,6 +21,8 @@ import {
   Shield,
   Sparkles,
   Lock,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
 import {
   Member,
@@ -49,6 +51,43 @@ import { PhotoCaptureModal } from '../common/PhotoCapture';
 import { ShieldCheck, Eye, Cpu, Scan } from 'lucide-react';
 import { parseMemberFromQRToken, generateSignedMemberToken } from '../../services/security';
 
+// Play luxury chime for door feedback
+function playAudioFeedback(success: boolean) {
+  try {
+    const AudioCtx =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+    }
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (success) {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.36);
+    } else {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(150, ctx.currentTime);
+      gain.gain.setValueAtTime(0.18, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.23);
+    }
+  } catch {
+    // Autoplay restrictions
+  }
+}
+
 interface DoorReceptionViewProps {
   currentStaff: StaffUser;
   onOpenTestRunner: () => void;
@@ -73,8 +112,32 @@ export const DoorReceptionView: React.FC<DoorReceptionViewProps> = ({
   const [showCheckOutModal, setShowCheckOutModal] = useState(false);
   const [showScannerModal, setShowScannerModal] = useState(false);
 
-  // iPad Front-Camera Live Scanner Deck
-  const [isKioskScannerActive, setIsKioskScannerActive] = useState(false);
+  // iPad / Kiosk Fullscreen Mode State
+  const [isKioskScannerActive, setIsKioskScannerActive] = useState(true);
+  const [isKioskFullScreen, setIsKioskFullScreen] = useState(false);
+
+  const toggleFullScreenKiosk = async () => {
+    if (!isKioskFullScreen && !document.fullscreenElement) {
+      try {
+        if (document.documentElement.requestFullscreen) {
+          await document.documentElement.requestFullscreen();
+        }
+      } catch {
+        // Browser fullscreen policy fallback
+      }
+      setIsKioskFullScreen(true);
+      setIsKioskScannerActive(true);
+    } else {
+      try {
+        if (document.exitFullscreen && document.fullscreenElement) {
+          await document.exitFullscreen();
+        }
+      } catch {
+        // Fallback
+      }
+      setIsKioskFullScreen(false);
+    }
+  };
   const [kioskScanFlash, setKioskScanFlash] = useState<'success' | 'failure' | null>(null);
   const [kioskFeedbackMessage, setKioskFeedbackMessage] = useState<string | null>(null);
   const [cameraPermissionStatus, setCameraPermissionStatus] = useState<'granted' | 'prompt' | 'denied' | 'checking'>('checking');
@@ -205,11 +268,80 @@ export const DoorReceptionView: React.FC<DoorReceptionViewProps> = ({
     setShowScannerModal(false);
   };
 
-  // Perform Member Check-In
+  // Perform Member Check-In or Re-Entry
   const handleCheckInMember = (member: Member) => {
+    setScannedMember(member);
     setScanMessage(null);
 
-    // Run full licensing validation
+    const today = currentDate.toISOString().split('T')[0];
+    const allVisitsToday = clubStore.getVisits().filter((v) => v.date === today && v.memberId === member.id);
+    const existingActiveVisit = allVisitsToday.find((v) => v.isCurrentlyInside);
+    const existingPastVisitToday = allVisitsToday.find((v) => !v.isCurrentlyInside);
+
+    // Case 1: Member is currently marked inside
+    if (existingActiveVisit) {
+      if (existingActiveVisit.isOutToSmoke) {
+        // Return from smoking break! Update existing record without creating duplicates
+        clubStore.markSmokingReturnedByVisitId(existingActiveVisit.id);
+        existingActiveVisit.isOutToSmoke = false;
+        existingActiveVisit.entryType = 'return';
+        clubStore.saveVisit(existingActiveVisit);
+
+        playAudioFeedback(true);
+        setScanMessage(`RE-ENTRY (RETURN FROM SMOKING): Welcome back inside, ${member.fullName}!`);
+        clubStore.addAuditLog({
+          actorId: currentStaff.id,
+          actorName: currentStaff.name,
+          actorRole: currentStaff.role,
+          action: 'SMOKING_RETURN',
+          targetType: 'member',
+          targetId: member.id,
+          targetName: member.fullName,
+          newValue: 'Status: Inside (Returned from smoking area)',
+          reason: 'Biometric face scan re-entry from smoking area',
+        });
+        return;
+      } else {
+        // Member is already inside
+        const checkInFormattedTime = new Date(existingActiveVisit.checkInTime).toLocaleTimeString('en-GB', {
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+        setScanMessage(`ALREADY INSIDE: ${member.fullName} was admitted at ${checkInFormattedTime}. Use controls below to step out to smoke or check out.`);
+        return;
+      }
+    }
+
+    // Case 2: Member checked in earlier today, checked out, and is now returning to the venue
+    if (existingPastVisitToday) {
+      // Re-admit under the same visit record as Return without duplicate creation
+      existingPastVisitToday.isCurrentlyInside = true;
+      existingPastVisitToday.checkOutTime = undefined;
+      existingPastVisitToday.entryType = 'return';
+      existingPastVisitToday.checkInTime = currentDate.toISOString();
+      existingPastVisitToday.responsibleStaffId = currentStaff.id;
+      existingPastVisitToday.responsibleStaffName = currentStaff.name;
+
+      clubStore.saveVisit(existingPastVisitToday);
+      playAudioFeedback(true);
+
+      clubStore.addAuditLog({
+        actorId: currentStaff.id,
+        actorName: currentStaff.name,
+        actorRole: currentStaff.role,
+        action: 'CHECK_IN_MEMBER',
+        targetType: 'member',
+        targetId: member.id,
+        targetName: member.fullName,
+        newValue: `Re-Entry Return (Occupancy: ${stats.totalCustomers + 1} / ${MAX_CUSTOMER_CAPACITY})`,
+        reason: `Re-admitted as Return under ${nightMode.mode} rules.`,
+      });
+
+      setScanMessage(`RE-ENTRY (RETURN): Welcome back to 23 Frith Street, ${member.fullName}! Status: Marked as Return.`);
+      return;
+    }
+
+    // Case 3: Fresh 'Arrival' for today (First time checking in today)
     const validation = validateAdmission({
       category: 'member',
       member,
@@ -223,10 +355,10 @@ export const DoorReceptionView: React.FC<DoorReceptionViewProps> = ({
       return;
     }
 
-    // Register visit
+    // Register fresh Arrival visit
     const newVisit: VisitRecord = {
       id: `vis-${Date.now()}`,
-      date: currentDate.toISOString().split('T')[0],
+      date: today,
       attendeeType: 'member',
       memberId: member.id,
       memberName: member.fullName,
@@ -235,11 +367,13 @@ export const DoorReceptionView: React.FC<DoorReceptionViewProps> = ({
       checkInTime: currentDate.toISOString(),
       isCurrentlyInside: true,
       isOutToSmoke: false,
+      entryType: 'arrival',
       responsibleStaffId: currentStaff.id,
       responsibleStaffName: currentStaff.name,
     };
 
     clubStore.saveVisit(newVisit);
+    playAudioFeedback(true);
 
     clubStore.addAuditLog({
       actorId: currentStaff.id,
@@ -249,11 +383,11 @@ export const DoorReceptionView: React.FC<DoorReceptionViewProps> = ({
       targetType: 'member',
       targetId: member.id,
       targetName: member.fullName,
-      newValue: `Occupancy: ${stats.totalCustomers + 1} / ${MAX_CUSTOMER_CAPACITY}`,
-      reason: `Admitted under ${nightMode.mode} rules.`,
+      newValue: `Fresh Arrival (Occupancy: ${stats.totalCustomers + 1} / ${MAX_CUSTOMER_CAPACITY})`,
+      reason: `Admitted under ${nightMode.mode} rules. Status: Fresh Arrival.`,
     });
 
-    setScanMessage(`Check-in successful: ${member.fullName} admitted.`);
+    setScanMessage(`FRESH ARRIVAL: Welcome to 23 Frith Street, ${member.fullName}! Status: Marked as Fresh Arrival.`);
   };
 
   // Add guest for a member
@@ -525,6 +659,14 @@ export const DoorReceptionView: React.FC<DoorReceptionViewProps> = ({
 
           {/* Control Grid - Amica Late High Contrast Buttons */}
           <div className="control-grid grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5">
+            <button
+              onClick={toggleFullScreenKiosk}
+              className="button-var col-span-2 sm:col-span-1 bg-gradient-to-r from-[#780C1E] via-[#8E0E24] to-[#4A0813] hover:from-[#9B142A] hover:to-[#680A18] border-2 border-[#F5CE76] shadow-xl active:scale-95 cursor-pointer"
+            >
+              <Maximize2 className="w-5 h-5 text-[#FFE194]" />
+              <span className="text-xs sm:text-sm font-extrabold text-[#FFE194] tracking-wider uppercase">FULLSCREEN KIOSK</span>
+            </button>
+
             <button
               onClick={() => setShowScannerModal(true)}
               className="button-var primary shadow-lg cursor-pointer"
@@ -845,23 +987,42 @@ export const DoorReceptionView: React.FC<DoorReceptionViewProps> = ({
                   </button>
 
                   {isMemberCurrentlyInside(scannedMember.id) && (
-                    <button
-                      onClick={() => {
-                        const visit = activeVisits.find((v) => v.memberId === scannedMember.id);
-                        if (visit) {
-                          clubStore.markOutToSmoke({
-                            visitId: visit.id,
-                            name: `${scannedMember.fullName} (Member)`,
-                            type: 'member',
-                          });
-                          setShowSmokingModal(true);
-                        }
-                      }}
-                      disabled={stats.smokersOutside >= MAX_SMOKERS_OUTSIDE}
-                      className="w-full py-2 rounded-xl bg-[#1C1318] hover:bg-[#281B23] border border-amber-500/40 text-amber-200 font-mono text-xs font-bold disabled:opacity-40 transition-colors cursor-pointer"
-                    >
-                      OUT TO SMOKE
-                    </button>
+                    <>
+                      {activeVisits.find((v) => v.memberId === scannedMember.id)?.isOutToSmoke ? (
+                        <button
+                          onClick={() => {
+                            const visit = activeVisits.find((v) => v.memberId === scannedMember.id);
+                            if (visit) {
+                              clubStore.markSmokingReturnedByVisitId(visit.id);
+                              playAudioFeedback(true);
+                              setScanMessage(`RE-ENTRY GRANTED: Welcome back in from smoking break, ${scannedMember.fullName}!`);
+                            }
+                          }}
+                          className="w-full py-2.5 rounded-xl bg-emerald-950 hover:bg-emerald-900 border border-emerald-500 text-emerald-200 font-mono text-xs font-bold transition-all shadow-md cursor-pointer flex items-center justify-center gap-1.5"
+                        >
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                          <span>RETURN IN FROM SMOKING BREAK</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            const visit = activeVisits.find((v) => v.memberId === scannedMember.id);
+                            if (visit) {
+                              clubStore.markOutToSmoke({
+                                visitId: visit.id,
+                                name: `${scannedMember.fullName} (Member)`,
+                                type: 'member',
+                              });
+                              setShowSmokingModal(true);
+                            }
+                          }}
+                          disabled={stats.smokersOutside >= MAX_SMOKERS_OUTSIDE}
+                          className="w-full py-2 rounded-xl bg-[#1C1318] hover:bg-[#281B23] border border-amber-500/40 text-amber-200 font-mono text-xs font-bold disabled:opacity-40 transition-colors cursor-pointer"
+                        >
+                          STEP OUT TO SMOKE (10m Break)
+                        </button>
+                      )}
+                    </>
                   )}
 
                   {/* Apple Wallet & Dispatch Pass Actions */}
@@ -1009,9 +1170,17 @@ export const DoorReceptionView: React.FC<DoorReceptionViewProps> = ({
                     <div className="min-w-0">
                       <div className="font-bold text-white text-sm truncate flex items-center gap-1.5">
                         <span>{v.memberName}</span>
-                        {v.isOutToSmoke && (
+                        {v.isOutToSmoke ? (
                           <span className="text-[10px] font-mono px-1.5 py-0.5 bg-amber-950 border border-amber-500 text-amber-200 font-bold rounded">
                             SMOKER
+                          </span>
+                        ) : v.entryType === 'return' ? (
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 bg-blue-950 border border-blue-400 text-blue-200 font-bold rounded">
+                            RETURN
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 bg-emerald-950 border border-emerald-500 text-emerald-200 font-bold rounded">
+                            ARRIVAL
                           </span>
                         )}
                       </div>
@@ -1482,6 +1651,169 @@ export const DoorReceptionView: React.FC<DoorReceptionViewProps> = ({
             }
           }}
         />
+      )}
+      {/* FULLSCREEN KIOSK MODE OVERLAY */}
+      {isKioskFullScreen && (
+        <div className="fixed inset-0 z-50 bg-[#070507] flex flex-col p-3 sm:p-6 overflow-hidden animate-fadeIn select-none">
+          {/* Header Bar */}
+          <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-[#F5CE76]/30 mb-3 sm:mb-4 bg-[#0D0A0C]/90 px-4 py-2.5 rounded-2xl shadow-xl">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-b from-[#8E0E24] to-[#4A0813] border border-[#F5CE76]/60 flex items-center justify-center text-[#FFE194] shadow-md shrink-0">
+                <Sparkles className="w-5 h-5 text-[#FFE194]" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-script text-2xl font-bold text-[#FFE194] leading-none">Amica</span>
+                  <span className="font-cinzel text-xs font-extrabold tracking-[2px] text-[#F5CE76] leading-none">LATE · SOHO</span>
+                </div>
+                <div className="text-[10px] font-mono text-emerald-300 font-bold uppercase mt-1">
+                  FULLSCREEN KIOSK MODE · HANDS-FREE EXPRESS ENTRY
+                </div>
+              </div>
+            </div>
+
+            {/* Occupancy Stats & Live Clock */}
+            <div className="flex items-center gap-4">
+              <div className="hidden sm:flex items-center gap-3 px-3 py-1.5 rounded-xl bg-[#171015] border border-[#F5CE76]/30">
+                <div>
+                  <div className="text-[9px] font-mono font-bold text-[#F5CE76] uppercase">Occupancy</div>
+                  <div className="text-sm font-extrabold text-white font-mono">{stats.totalCustomers} / 80</div>
+                </div>
+                <div className="h-6 w-px bg-[#F5CE76]/20" />
+                <div>
+                  <div className="text-[9px] font-mono font-bold text-amber-300 uppercase">Terrace</div>
+                  <div className="text-sm font-extrabold text-amber-200 font-mono">{stats.smokersOutside} / 10</div>
+                </div>
+              </div>
+
+              <div className="text-right">
+                <div className="font-mono text-lg sm:text-2xl font-bold text-white tabular-nums">
+                  {currentDate.toLocaleTimeString('en-GB', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                  })}
+                </div>
+                <div className="text-[10px] font-mono text-[#F5CE76] font-bold">23 Frith Street W1D</div>
+              </div>
+
+              <button
+                onClick={toggleFullScreenKiosk}
+                className="px-3 py-2 rounded-xl bg-[#20131A] hover:bg-[#341B2A] border border-[#F5CE76]/50 text-[#FFE194] font-mono text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-lg active:scale-95 transition-all"
+              >
+                <Minimize2 className="w-4 h-4 text-[#FFE194]" />
+                <span className="hidden sm:inline">EXIT KIOSK</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Central Main Viewport */}
+          <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-4 min-h-0">
+            {/* Live Camera Viewfinder */}
+            <div className="relative rounded-2xl overflow-hidden border-2 border-[#F5CE76]/50 bg-black flex flex-col shadow-2xl">
+              <UniversalCameraScanner
+                mode="inline"
+                isOpen={isKioskFullScreen}
+                onClose={() => setIsKioskFullScreen(false)}
+                onMemberScanned={(member) => {
+                  handleSelectMember(member);
+                }}
+                onAdmitDirectly={(member) => {
+                  handleCheckInMember(member);
+                }}
+                currentStaff={currentStaff}
+                currentCustomerCount={stats.totalCustomers}
+                venueDate={currentDate}
+              />
+            </div>
+
+            {/* Side Control & Verification Toast Banner Panel */}
+            <div className="flex flex-col gap-3 min-h-0">
+              {/* Verification Message Card */}
+              {scanMessage && (
+                <div className="p-4 rounded-2xl bg-gradient-to-b from-[#1E1119] to-[#120B10] border-2 border-[#F5CE76] shadow-2xl animate-fadeIn">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-950 border border-emerald-400 flex items-center justify-center text-emerald-400 shrink-0">
+                      <CheckCircle2 className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-wider">
+                        BIOMETRIC ENTRY DECISION
+                      </div>
+                      <div className="font-serif text-lg font-bold text-white mt-0.5 leading-snug">
+                        {scanMessage}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Scanned Member Spotlight Card */}
+              {scannedMember ? (
+                <div className="p-4 rounded-2xl bg-[#140D12] border border-[#F5CE76]/35 shadow-xl space-y-3 flex-1 overflow-y-auto">
+                  <div className="flex items-center justify-between pb-2 border-b border-[#F5CE76]/20">
+                    <span className="text-[10px] font-mono font-bold text-[#F5CE76] uppercase tracking-wider">Active Patron Card</span>
+                    <span className="text-xs font-mono font-bold text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-500/40">
+                      {isMemberCurrentlyInside(scannedMember.id) ? 'CURRENTLY INSIDE' : 'STANDBY'}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={scannedMember.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
+                      alt={scannedMember.fullName}
+                      className="w-14 h-14 rounded-2xl object-cover border-2 border-[#F5CE76]"
+                    />
+                    <div>
+                      <div className="font-serif text-xl font-bold text-white">{scannedMember.fullName}</div>
+                      <div className="text-xs font-mono text-[#FFE194] font-bold">{scannedMember.memberNumber}</div>
+                      <div className="text-[11px] text-stone-300 capitalize">{scannedMember.tier || 'Full'} Member</div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#F5CE76]/20">
+                    <button
+                      onClick={() => handleCheckInMember(scannedMember)}
+                      className="py-2.5 rounded-xl bg-gradient-to-r from-[#8E0E24] to-[#4A0813] hover:from-[#B51330] hover:to-[#680A18] border border-[#F5CE76] text-white font-mono text-xs font-bold uppercase cursor-pointer"
+                    >
+                      ADMIT DIRECTLY
+                    </button>
+                    <button
+                      onClick={() => setShowSmokingModal(true)}
+                      className="py-2.5 rounded-xl bg-[#1C1218] hover:bg-[#281A23] border border-amber-500/50 text-amber-200 font-mono text-xs font-bold uppercase cursor-pointer"
+                    >
+                      SMOKING BREAK
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-6 rounded-2xl bg-[#140D12]/80 border border-[#F5CE76]/20 text-center my-auto flex flex-col items-center justify-center space-y-2">
+                  <Scan className="w-8 h-8 text-[#F5CE76] animate-pulse" />
+                  <div className="font-serif text-base font-bold text-white">Ready for Next Patron</div>
+                  <div className="text-xs text-stone-300 font-mono">Position face in center frame for hands-free entry</div>
+                </div>
+              )}
+
+              {/* Quick Actions Footer Bar */}
+              <div className="grid grid-cols-2 gap-2 mt-auto pt-2">
+                <button
+                  onClick={() => setShowMemberLookup(true)}
+                  className="py-2.5 rounded-xl bg-[#180E14] hover:bg-[#251621] border border-[#F5CE76]/30 text-white font-mono text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Search className="w-4 h-4 text-[#F5CE76]" />
+                  <span>LOOKUP</span>
+                </button>
+                <button
+                  onClick={() => setShowCheckOutModal(true)}
+                  className="py-2.5 rounded-xl bg-[#180E14] hover:bg-[#251621] border border-[#F5CE76]/30 text-white font-mono text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4 text-rose-300" />
+                  <span>CHECKOUT</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

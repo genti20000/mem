@@ -405,6 +405,22 @@ export const clubStore = {
     }
   },
 
+  markSmokingReturnedByVisitId(visitId: string): void {
+    const list = this.getSmokingPatrons();
+    const patron = list.find((p) => p.visitId === visitId);
+    if (patron) {
+      this.markSmokingReturned(patron.id);
+    } else {
+      const visits = this.getVisits();
+      const v = visits.find((item) => item.id === visitId);
+      if (v) {
+        v.isOutToSmoke = false;
+        setItem(STORAGE_KEYS.VISITS, visits);
+        notify();
+      }
+    }
+  },
+
   removeSmokingPatronByVisitId(visitId: string): void {
     const list = this.getSmokingPatrons().filter((p) => p.visitId !== visitId);
     setItem(STORAGE_KEYS.SMOKING, list);

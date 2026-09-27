@@ -540,75 +540,74 @@ export const DoorReceptionView: React.FC<DoorReceptionViewProps> = ({
 
   return (
     <div className="flex flex-col">
-      {/* Utility Grid - Key-Value Data Cards (Ultra Compact) */}
-      <section className="utility-grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-px bg-[#F5CE76]/20 border-b border-[#F5CE76]/25">
-        <div className="util-box py-2 px-2.5 bg-[#0F0A0E]">
-          <div className="label text-[10px] text-[#F5CE76] font-bold uppercase tracking-wider">Active Members in Venue</div>
-          <div className="value flex items-baseline gap-1 text-white">
-            <span className="text-lg sm:text-xl font-extrabold text-emerald-300">{stats.membersInside}</span>
-            <span className="text-[10px] font-mono text-emerald-400 font-bold">INSIDE</span>
+      {/* Utility Grid - Ultra Compact Low-Profile Key-Value Data Cards */}
+      <section className="utility-grid grid grid-cols-3 md:grid-cols-6 gap-1 p-1 sm:p-1.5 bg-[#090608] border-b border-[#F5CE76]/20">
+        <div className="util-box p-1.5 bg-[#120A0E] rounded-lg border border-[#F5CE76]/20 flex flex-col justify-center">
+          <div className="label text-[9px] text-[#F5CE76] font-bold uppercase tracking-wider leading-none truncate">Active Members</div>
+          <div className="value flex items-baseline gap-1 text-white mt-0.5 leading-none">
+            <span className="text-xs sm:text-sm font-extrabold text-emerald-300">{stats.membersInside}</span>
+            <span className="text-[8px] font-mono text-emerald-400 font-bold">INSIDE</span>
           </div>
-          <div className="text-[9px] font-mono text-stone-300 mt-0.5 truncate">
+          <div className="text-[8px] font-mono text-stone-400 mt-0.5 truncate leading-none">
             Active passholders
           </div>
         </div>
 
-        <div className="util-box py-2 px-2.5 bg-[#0F0A0E]">
-          <div className="label text-[10px] text-[#F5CE76] font-bold uppercase tracking-wider">Waiting List Count</div>
-          <div className="value flex items-baseline gap-1 text-white">
-            <span className="text-lg sm:text-xl font-extrabold text-amber-300">{waitingListCount}</span>
-            <span className="text-[10px] font-mono text-amber-400 font-bold">PENDING</span>
+        <div className="util-box p-1.5 bg-[#120A0E] rounded-lg border border-[#F5CE76]/20 flex flex-col justify-center">
+          <div className="label text-[9px] text-[#F5CE76] font-bold uppercase tracking-wider leading-none truncate">Waiting List</div>
+          <div className="value flex items-baseline gap-1 text-white mt-0.5 leading-none">
+            <span className="text-xs sm:text-sm font-extrabold text-amber-300">{waitingListCount}</span>
+            <span className="text-[8px] font-mono text-amber-400 font-bold">PENDING</span>
           </div>
-          <div className="text-[9px] font-mono text-stone-300 mt-0.5 truncate">
-            48h statutory review
-          </div>
-        </div>
-
-        <div className="util-box py-2 px-2.5 bg-[#0F0A0E]">
-          <div className="label text-[10px] text-[#F5CE76] font-bold uppercase tracking-wider">Venue Occupancy</div>
-          <div className="value flex items-baseline gap-1 text-white">
-            <span className="text-lg sm:text-xl font-extrabold">{stats.totalCustomers}</span>
-            <span className="text-xs text-[#F5CE76] font-semibold opacity-70">/80</span>
-          </div>
-          <div className="text-[9px] font-mono text-stone-300 mt-0.5 truncate">
-            Max 80 customer license
+          <div className="text-[8px] font-mono text-stone-400 mt-0.5 truncate leading-none">
+            48h review
           </div>
         </div>
 
-        <div className="util-box py-2 px-2.5 bg-[#0F0A0E]">
-          <div className="label text-[10px] text-[#F5CE76] font-bold uppercase tracking-wider">Member Guests</div>
-          <div className="value text-white text-lg sm:text-xl font-extrabold">{stats.guestsInside}</div>
-          <div className="text-[9px] font-mono text-stone-300 mt-0.5 truncate">
-            Max 2 per member
+        <div className="util-box p-1.5 bg-[#120A0E] rounded-lg border border-[#F5CE76]/20 flex flex-col justify-center">
+          <div className="label text-[9px] text-[#F5CE76] font-bold uppercase tracking-wider leading-none truncate">Venue Occupancy</div>
+          <div className="value flex items-baseline gap-0.5 text-white mt-0.5 leading-none">
+            <span className="text-xs sm:text-sm font-extrabold">{stats.totalCustomers}</span>
+            <span className="text-[10px] text-[#F5CE76] font-semibold opacity-70">/80</span>
+          </div>
+          <div className="text-[8px] font-mono text-stone-400 mt-0.5 truncate leading-none">
+            Max 80 license
           </div>
         </div>
 
-        <div className="util-box py-2 px-2.5 bg-[#0F0A0E]">
-          <div className="label text-[10px] text-[#F5CE76] font-bold uppercase tracking-wider">Proprietor Guests</div>
-          <div className="value flex items-baseline gap-1 text-white">
-            <span className="text-lg sm:text-xl font-extrabold">{stats.proprietorGuestsInside}</span>
-            <span className="text-xs text-[#F5CE76] font-semibold opacity-70">/5</span>
+        <div className="util-box p-1.5 bg-[#120A0E] rounded-lg border border-[#F5CE76]/20 flex flex-col justify-center">
+          <div className="label text-[9px] text-[#F5CE76] font-bold uppercase tracking-wider leading-none truncate">Member Guests</div>
+          <div className="value text-white text-xs sm:text-sm font-extrabold mt-0.5 leading-none">{stats.guestsInside}</div>
+          <div className="text-[8px] font-mono text-stone-400 mt-0.5 truncate leading-none">
+            Max 2 / member
           </div>
-          <div className="text-[9px] font-mono text-stone-300 mt-0.5 truncate">
-            Christian / Jonny list
+        </div>
+
+        <div className="util-box p-1.5 bg-[#120A0E] rounded-lg border border-[#F5CE76]/20 flex flex-col justify-center">
+          <div className="label text-[9px] text-[#F5CE76] font-bold uppercase tracking-wider leading-none truncate">Proprietor List</div>
+          <div className="value flex items-baseline gap-0.5 text-white mt-0.5 leading-none">
+            <span className="text-xs sm:text-sm font-extrabold">{stats.proprietorGuestsInside}</span>
+            <span className="text-[10px] text-[#F5CE76] font-semibold opacity-70">/5</span>
+          </div>
+          <div className="text-[8px] font-mono text-stone-400 mt-0.5 truncate leading-none">
+            VIP guest list
           </div>
         </div>
 
         <div
           onClick={() => setShowSmokingModal(true)}
-          className="util-box py-2 px-2.5 bg-[#0F0A0E] cursor-pointer hover:bg-[#1A1216] transition-colors col-span-2 md:col-span-1 border-t sm:border-t-0 border-[#F5CE76]/30"
+          className="util-box p-1.5 bg-[#120A0E] rounded-lg border border-[#F5CE76]/20 flex flex-col justify-center cursor-pointer hover:bg-[#1C1117] transition-colors"
         >
-          <div className="label flex items-center justify-between">
-            <span className="text-amber-300 font-bold text-[10px] uppercase tracking-wider">Terrace Smoking</span>
-            <span className="text-amber-300 font-bold text-[9px]">TERRACE</span>
+          <div className="label flex items-center justify-between leading-none">
+            <span className="text-amber-300 font-bold text-[9px] uppercase tracking-wider truncate">Smoking Terrace</span>
           </div>
-          <div className="value flex items-baseline gap-1 text-amber-300">
-            <span className="text-lg sm:text-xl font-extrabold">{stats.smokersOutside}</span>
-            <span className="text-xs text-amber-200 opacity-70">/10</span>
+          <div className="value flex items-baseline gap-0.5 text-amber-300 mt-0.5 leading-none">
+            <span className="text-xs sm:text-sm font-extrabold">{stats.smokersOutside}</span>
+            <span className="text-[10px] text-amber-200 opacity-70">/10</span>
           </div>
-          <div className="text-[9px] font-mono text-amber-300 font-semibold mt-0.5 flex items-center justify-between">
-            <span>Manage Capacity</span>
-            <ChevronRight className="w-3 h-3" />
+          <div className="text-[8px] font-mono text-amber-300 font-semibold mt-0.5 flex items-center justify-between leading-none">
+            <span className="truncate">Cap 10</span>
+            <ChevronRight className="w-2.5 h-2.5 shrink-0" />
           </div>
         </div>
       </section>

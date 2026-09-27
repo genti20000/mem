@@ -20,7 +20,6 @@ import {
   ChevronDown,
   Menu,
   X,
-  Shield,
   Database,
   QrCode,
   CreditCard,
@@ -28,6 +27,9 @@ import {
   BarChart3,
   ShieldAlert,
   UserPlus,
+  Sparkles,
+  Clock,
+  GlassWater,
 } from 'lucide-react';
 
 export default function App() {
@@ -64,55 +66,112 @@ export default function App() {
 
   const navItems = [
     { id: 'door', label: 'Door Control', shortLabel: 'Door', icon: QrCode },
-    { id: 'cards', label: 'Member Entry', shortLabel: 'Passes', icon: CreditCard },
+    { id: 'cards', label: 'Member Passes', shortLabel: 'Passes', icon: CreditCard },
     { id: 'register', label: 'Guest Ledger', shortLabel: 'Ledger', icon: BookOpen },
-    { id: 'management', label: 'Occupancy', shortLabel: 'Cap', icon: BarChart3 },
-    { id: 'incidents', label: 'Incidents', shortLabel: 'Incidents', icon: ShieldAlert },
-    { id: 'applications', label: 'Admin Panel', shortLabel: 'Admin', icon: UserPlus },
+    { id: 'management', label: 'Occupancy & Queue', shortLabel: 'Occupancy', icon: BarChart3 },
+    { id: 'incidents', label: 'Incident Log', shortLabel: 'Incidents', icon: ShieldAlert },
+    { id: 'applications', label: 'Admissions & Admin', shortLabel: 'Admin', icon: UserPlus },
   ];
 
   return (
-    <div className="min-h-screen bg-[#111113] text-[#f2f2f2] font-sans antialiased flex flex-col md:grid md:grid-cols-[260px_1fr] lg:grid-cols-[280px_1fr]">
-      {/* Mobile Top Header */}
-      <div className="md:hidden flex items-center justify-between p-4 bg-[#09090b] border-b border-white/[0.08]">
-        <div className="font-serif text-2xl font-bold tracking-wider text-[#C6A052]">
-          JONNY&apos;S
-        </div>
+    <div className="min-h-screen bg-[#09080A] text-[#F7F4EE] font-sans antialiased flex flex-col md:grid md:grid-cols-[270px_1fr] lg:grid-cols-[290px_1fr]">
+      {/* Mobile Top Header - Compact, High-Contrast Amica Canopy Bar */}
+      <div className="md:hidden sticky top-0 z-40 flex items-center justify-between px-3 py-1.5 bg-[#0A0709]/98 backdrop-blur-md border-b border-[#F5CE76]/35 shadow-xl">
         <div className="flex items-center gap-2">
+          {/* Canopy badge icon */}
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-b from-[#8E0E24] to-[#4A0813] border border-[#F5CE76]/50 flex items-center justify-center text-[#FFE194] shadow-sm shrink-0">
+            <GlassWater className="w-3.5 h-3.5 text-[#F5CE76]" />
+          </div>
+          <div className="flex items-baseline gap-1.5 leading-none">
+            <span className="font-script text-2xl font-bold text-[#FFE194] tracking-wide drop-shadow-sm">
+              Amica
+            </span>
+            <span className="font-cinzel text-xs font-extrabold tracking-[2px] text-[#F5CE76]">
+              LATE
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* High-contrast Compact Clock */}
+          <div className="text-right px-2 py-0.5 rounded-lg bg-[#140D12] border border-[#F5CE76]/35 shadow-inner">
+            <div className="font-mono text-xs font-bold text-white tabular-nums leading-none">
+              {currentDate.toLocaleTimeString('en-GB', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+              })}
+            </div>
+            <div className="text-[9px] font-mono text-emerald-300 font-bold uppercase mt-0.5 leading-none">
+              {nightMode.mode === 'no_new_admissions'
+                ? '01:30 Cut-off'
+                : nightMode.mode === 'members_mode'
+                ? 'Post-1am Club'
+                : 'Open Entry'}
+            </div>
+          </div>
+
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded bg-[#1a1a1e] border border-white/[0.08] text-white"
+            className="p-1.5 rounded-lg bg-[#1C1117] hover:bg-[#2A1822] border border-[#F5CE76]/50 text-[#FFE194] active:scale-95 transition-all cursor-pointer shadow-md"
+            aria-label="Toggle menu"
           >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {mobileMenuOpen ? <X className="w-4 h-4 text-[#FFE194]" /> : <Menu className="w-4 h-4 text-[#FFE194]" />}
           </button>
         </div>
       </div>
 
-      {/* Sidebar Navigation - Exact Variation 6 Architecture */}
+      {/* Sidebar Navigation - Velvet Canopy & Obsidian Portal Architecture */}
       <aside
         className={`${
           mobileMenuOpen ? 'flex' : 'hidden'
-        } md:flex flex-col p-6 bg-[#09090b] border-r border-white/[0.08] fixed md:static inset-0 z-40 md:z-auto overflow-y-auto`}
+        } md:flex flex-col p-5 sm:p-6 bg-[#0D0A0C] border-r border-[#F5CE76]/20 fixed md:static inset-0 z-50 md:z-auto overflow-y-auto`}
       >
-        <div className="flex items-center justify-between md:block mb-8">
+        {/* Brand Crest */}
+        <div className="flex items-center justify-between md:block mb-6 pb-5 border-b border-[#F5CE76]/20">
           <div>
-            <div className="font-serif text-3xl font-bold tracking-wider text-[#C6A052] leading-none">
-              JONNY&apos;S
-            </div>
-            <div className="font-mono text-[10px] tracking-[2px] uppercase text-white/40 mt-1.5">
-              23 Frith Street · Soho
+            {/* Velvet Canopy Emblem */}
+            <div className="relative rounded-2xl overflow-hidden p-4 mb-3 border border-[#F5CE76]/40 shadow-xl bg-gradient-to-b from-[#9B142A] via-[#680A18] to-[#34050D]">
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-1.5 text-[#F5CE76]">
+                  <GlassWater className="w-4 h-4" />
+                  <Sparkles className="w-3.5 h-3.5 text-[#FFE194]" />
+                </div>
+                <span className="font-mono text-[10px] uppercase tracking-widest text-[#FFE194] bg-black/40 px-2 py-0.5 rounded-full border border-[#F5CE76]/30 font-semibold">
+                  SOHO LATE
+                </span>
+              </div>
+
+              <div className="text-center py-1">
+                <div className="font-script text-4xl sm:text-5xl font-bold text-[#FFE194] tracking-wide drop-shadow-md">
+                  Amica
+                </div>
+                <div className="font-cinzel text-[11px] font-extrabold tracking-[3px] text-[#FFE194] uppercase mt-0.5">
+                  Aperitivo — Music — Late
+                </div>
+              </div>
+
+              <div className="mt-2 pt-2 border-t border-[#F5CE76]/25 text-center">
+                <div className="font-mono text-[11px] font-bold text-[#FFFFFF] tracking-wider uppercase">
+                  Sub: <span className="text-[#FFE194]">Jonny&apos;s Late Show</span>
+                </div>
+                <div className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#F5CE76]/80 mt-0.5">
+                  23 Frith Street · Soho W1D 4RR
+                </div>
+              </div>
             </div>
           </div>
+
           <button
             onClick={() => setMobileMenuOpen(false)}
-            className="md:hidden p-2 text-stone-400"
+            className="md:hidden p-2 text-stone-300 hover:text-white rounded-lg bg-[#20141A]"
           >
             <X className="w-6 h-6" />
           </button>
         </div>
 
         {/* Navigation Links */}
-        <nav className="flex flex-col space-y-1">
+        <nav className="flex flex-col space-y-1.5">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentTab === item.id;
@@ -123,78 +182,79 @@ export default function App() {
                   setCurrentTab(item.id);
                   setMobileMenuOpen(false);
                 }}
-                className={`nav-link flex items-center gap-2.5 ${isActive ? 'active' : ''}`}
+                className={`nav-link ${isActive ? 'active' : ''}`}
               >
-                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#C6A052]' : 'text-white/40'}`} />
-                <span>{item.label}</span>
+                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#FFE194]' : 'text-[#F5CE76]/70'}`} />
+                <span className="text-xs sm:text-sm font-bold tracking-wide">{item.label}</span>
               </button>
             );
           })}
+
           <button
             onClick={() => {
               setShowTestRunner(true);
               setMobileMenuOpen(false);
             }}
-            className="nav-link text-amber-400/80 hover:text-[#C6A052] flex items-center justify-between"
+            className="nav-link text-amber-300 hover:text-[#FFE194] flex items-center justify-between mt-2 pt-2 border-t border-[#F5CE76]/15"
           >
-            <span>Boundary Tests</span>
-            <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-950/60 border border-amber-500/40 text-amber-300">
+            <span className="text-xs font-bold">Westminster Tests</span>
+            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-950 border border-emerald-500/50 text-emerald-300">
               8 PASS
             </span>
           </button>
         </nav>
 
         {/* Operating Profile & Staff Switcher */}
-        <div className="mt-auto pt-8 border-t border-white/[0.08] space-y-4">
+        <div className="mt-auto pt-5 border-t border-[#F5CE76]/20 space-y-3.5">
           <div>
-            <div className="label">Operating Profile</div>
-            <div className="font-mono text-[11px] font-bold text-[#C6A052] uppercase tracking-wider leading-snug">
+            <div className="label text-[10px] text-[#F5CE76] font-bold">OPERATING PROFILE</div>
+            <div className="font-mono text-xs font-bold text-[#FFFFFF] uppercase tracking-wider leading-snug">
               {nightMode.mode === 'no_new_admissions'
-                ? '01:30 AM CUT-OFF (RETURNING SMOKERS ONLY)'
+                ? '01:30 AM CUT-OFF (SMOKERS ONLY)'
                 : nightMode.mode === 'members_mode'
                 ? 'POST-01:00 AM MEMBER & GUEST ONLY'
-                : 'STANDARD CLUB ADMISSIONS'}
+                : 'STANDARD ADMISSIONS'}
             </div>
-            <div className="text-[10px] text-white/40 mt-0.5 font-mono">
+            <div className="text-[10px] text-stone-300 mt-0.5 font-mono">
               Westminster City Council Licensing Schedule
             </div>
           </div>
 
           {/* Connected Staff Profile Selector */}
-          <div className="relative pt-2 border-t border-white/[0.05]">
-            <div className="label mb-1">Active Operator</div>
+          <div className="relative pt-2 border-t border-[#F5CE76]/15">
+            <div className="label text-[10px] text-[#F5CE76] font-bold mb-1">ACTIVE OPERATOR</div>
             <button
               onClick={() => setShowStaffSelector(!showStaffSelector)}
-              className="w-full flex items-center justify-between p-2 rounded bg-[#151518] hover:bg-[#1f1f24] border border-white/[0.08] transition-colors text-left"
+              className="w-full flex items-center justify-between p-2.5 rounded-xl bg-[#171115] hover:bg-[#251A21] border border-[#F5CE76]/30 transition-colors text-left cursor-pointer"
             >
               <div className="min-w-0">
                 <div className="text-xs font-mono font-bold text-white truncate">
                   {currentStaff.name}
                 </div>
-                <div className="text-[10px] font-mono text-[#C6A052]">
+                <div className="text-[11px] font-mono text-[#F5CE76] font-semibold">
                   {currentStaff.badgeNumber} · {currentStaff.role.toUpperCase()}
                 </div>
               </div>
-              <ChevronDown className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+              <ChevronDown className="w-4 h-4 text-[#F5CE76] shrink-0" />
             </button>
 
             {showStaffSelector && (
-              <div className="absolute bottom-full left-0 right-0 mb-2 bg-[#1a1a1e] border border-white/[0.12] shadow-2xl rounded p-1.5 z-50 space-y-1">
-                <div className="px-2 py-1 text-[10px] font-mono text-stone-400 uppercase tracking-wider">
+              <div className="absolute bottom-full left-0 right-0 mb-2 bg-[#171115] border border-[#F5CE76]/40 shadow-2xl rounded-xl p-2 z-50 space-y-1">
+                <div className="px-2 py-1 text-[10px] font-mono text-[#F5CE76] font-bold uppercase tracking-wider">
                   Switch Active Role
                 </div>
                 {staffList.map((s) => (
                   <button
                     key={s.id}
                     onClick={() => handleSwitchStaff(s.id)}
-                    className={`w-full text-left px-2 py-1.5 rounded text-xs font-mono flex items-center justify-between ${
+                    className={`w-full text-left px-2.5 py-2 rounded-lg text-xs font-mono font-semibold flex items-center justify-between transition-colors ${
                       s.id === currentStaff.id
-                        ? 'bg-[#581625] text-[#C6A052]'
-                        : 'text-stone-300 hover:bg-[#25252b]'
+                        ? 'bg-[#780C1E] text-[#FFE194] border border-[#F5CE76]/50'
+                        : 'text-stone-200 hover:bg-[#241820]'
                     }`}
                   >
                     <span>{s.name}</span>
-                    <span className="text-[10px] opacity-60 uppercase">{s.role}</span>
+                    <span className="text-[10px] uppercase font-bold opacity-80">{s.role}</span>
                   </button>
                 ))}
               </div>
@@ -205,36 +265,29 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="flex flex-col min-h-screen overflow-x-hidden">
-        {/* Header Bar - Variation 6 Header */}
-        <header className="px-6 sm:px-10 py-5 border-b border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#111113]">
-          <div>
-            <h1 className="font-serif text-lg sm:text-xl uppercase tracking-[2px] text-[#f2f2f2] font-bold">
-              23 Frith Street Members
-            </h1>
-            <p className="label mt-1">Reception & Door Compliance System</p>
-          </div>
-
-          <div className="flex items-center gap-4 sm:gap-6 self-end sm:self-auto">
+        {/* Header Bar - High Contrast & Compact */}
+        <header className="px-4 sm:px-6 py-2 sm:py-2.5 border-b border-[#F5CE76]/20 flex items-center justify-end gap-3 bg-[#0D0A0C]">
+          <div className="flex items-center gap-3 sm:gap-4">
             {/* Live Clock & Operating Badge */}
             <div className="text-right">
-              <div className="value text-xl sm:text-2xl text-[#f2f2f2]">
+              <div className="font-mono text-base sm:text-xl font-bold text-white tabular-nums tracking-tight">
                 {currentDate.toLocaleTimeString('en-GB', {
                   hour: '2-digit',
                   minute: '2-digit',
                   second: '2-digit',
                 })}
               </div>
-              <div className="label mt-0.5">
+              <div className="text-[10px] font-mono font-bold text-[#F5CE76] uppercase">
                 {nightMode.mode === 'no_new_admissions'
                   ? 'Hard Cutoff Mode'
                   : nightMode.mode === 'members_mode'
-                  ? 'Post-1am Club Only'
-                  : 'Normal Ops Mode'}
+                  ? 'Post-1am Members Only'
+                  : 'Normal Admissions'}
               </div>
             </div>
 
             {/* Time Travel / Test Clock & PWA */}
-            <div className="flex items-center gap-2 pl-3 border-l border-white/[0.08]">
+            <div className="flex items-center gap-2 pl-3 border-l border-[#F5CE76]/20">
               <VenueTimeController onOpenTestRunner={() => setShowTestRunner(true)} />
               <PWAInstallButton />
             </div>
@@ -242,7 +295,7 @@ export default function App() {
         </header>
 
         {/* Dynamic Workspace Container */}
-        <div className="flex-1">
+        <div className="flex-1 pb-16 md:pb-0">
           {currentTab === 'door' && (
             <DoorReceptionView
               currentStaff={currentStaff}
@@ -252,60 +305,60 @@ export default function App() {
           )}
 
           {currentTab === 'cards' && (
-            <div className="p-6 sm:p-10 max-w-5xl mx-auto">
+            <div className="p-3 sm:p-6 lg:p-8 max-w-5xl mx-auto">
               <DigitalMemberCard />
             </div>
           )}
 
           {currentTab === 'register' && (
-            <div className="p-6 sm:p-10 max-w-6xl mx-auto">
+            <div className="p-3 sm:p-6 lg:p-8 max-w-6xl mx-auto">
               <AttendanceRegisterView />
             </div>
           )}
 
           {currentTab === 'incidents' && (
-            <div className="p-6 sm:p-10 max-w-6xl mx-auto">
+            <div className="p-3 sm:p-6 lg:p-8 max-w-6xl mx-auto">
               <IncidentLogView currentStaff={currentStaff} />
             </div>
           )}
 
           {currentTab === 'management' && (
-            <div className="p-6 sm:p-10 max-w-6xl mx-auto">
+            <div className="p-3 sm:p-6 lg:p-8 max-w-6xl mx-auto">
               <ManagementDashboard currentStaff={currentStaff} />
             </div>
           )}
 
           {currentTab === 'applications' && (
-            <div className="p-6 sm:p-10 max-w-5xl mx-auto">
+            <div className="p-3 sm:p-6 lg:p-8 max-w-5xl mx-auto">
               <MembershipApplicationFlow />
             </div>
           )}
         </div>
 
-        {/* Footer - Exact Variation 6 Architecture */}
-        <footer className="px-6 sm:px-10 py-4 bg-[#09090b] border-t border-white/[0.08] font-mono text-[10px] text-white/40 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mt-auto mb-16 md:mb-0">
+        {/* Footer - High Contrast & Compact */}
+        <footer className="px-4 sm:px-8 py-3 bg-[#0D0A0C] border-t border-[#F5CE76]/20 font-mono text-[11px] text-stone-300 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mt-auto mb-14 md:mb-0">
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center">
               <span className="status-dot" />
-              <span>
-                CONNECTED AS: {currentStaff.name.toUpperCase()} [{currentStaff.badgeNumber} {currentStaff.role.toUpperCase()}]
+              <span className="font-bold text-white">
+                CONNECTED: {currentStaff.name.toUpperCase()} [{currentStaff.badgeNumber} {currentStaff.role.toUpperCase()}]
               </span>
             </div>
             <span className="opacity-30">·</span>
-            <div className="flex items-center gap-1.5 text-emerald-400">
-              <Database className="w-3 h-3 text-emerald-400" />
-              <span className="tracking-wide">FIRESTORE CLOUD DB SYNCED</span>
+            <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
+              <Database className="w-3.5 h-3.5 text-emerald-400" />
+              <span>FIRESTORE CLOUD DB ONLINE</span>
             </div>
           </div>
-          <div>
-            LICENSING ACT 2003 · WESTMINSTER COUNCIL COMPLIANT
+          <div className="text-[#F5CE76] font-semibold">
+            AMICA LATE · 23 FRITH STREET SOHO
           </div>
         </footer>
 
-        {/* Mobile Ergonomic Bottom Tab Bar (Thumb Zone) */}
+        {/* Mobile Ergonomic Bottom Tab Bar (Thumb Zone) - Compact, Big Font, High Contrast */}
         <nav
           aria-label="Mobile Bottom Navigation"
-          className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#09090b]/95 backdrop-blur-lg border-t border-white/[0.1] px-1 py-1.5 flex items-center justify-around shadow-2xl"
+          className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#090608]/98 backdrop-blur-xl border-t border-[#F5CE76]/40 px-1 py-1 flex items-center justify-around shadow-2xl"
         >
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -314,19 +367,16 @@ export default function App() {
               <button
                 key={item.id}
                 onClick={() => setCurrentTab(item.id)}
-                className={`flex flex-col items-center justify-center py-1 px-1.5 min-w-[48px] min-h-[44px] rounded-lg transition-all active:scale-95 ${
+                className={`flex flex-col items-center justify-center py-1 px-1 min-w-[52px] min-h-[48px] rounded-xl transition-all active:scale-95 cursor-pointer ${
                   isActive
-                    ? 'text-[#C6A052]'
-                    : 'text-stone-400 hover:text-stone-200'
+                    ? 'bg-gradient-to-b from-[#8E0E24] to-[#4A0813] text-[#FFFFFF] border-2 border-[#F5CE76] shadow-xl'
+                    : 'text-[#E0D7CC] hover:text-white'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-[#C6A052]' : 'text-stone-400'}`} />
-                <span className={`text-[10px] font-mono mt-0.5 tracking-tight ${isActive ? 'font-bold text-[#E5C378]' : 'text-stone-400'}`}>
+                <Icon className={`w-4 h-4 ${isActive ? 'text-[#FFE194]' : 'text-[#E0D7CC]'}`} />
+                <span className={`text-xs font-mono mt-0.5 tracking-tight ${isActive ? 'font-extrabold text-[#FFE194]' : 'text-[#E0D7CC] font-bold'}`}>
                   {item.shortLabel}
                 </span>
-                {isActive && (
-                  <span className="w-1 h-1 rounded-full bg-[#C6A052] mt-0.5" />
-                )}
               </button>
             );
           })}

@@ -211,26 +211,33 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
   return (
     <div className="space-y-6">
       {/* Header & RBAC Notice */}
-      <div className="rounded-2xl bg-gradient-to-r from-[#200A11] via-[#141012] to-[#141012] border border-[#3E101B] p-5 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
+      <div className="rounded-2xl bg-[#120A0E] border-2 border-[#F5CE76]/35 p-4 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[#E5C378]">
-              Management & Licensing Governance
+          <div className="flex items-center gap-2.5">
+            <span className="font-script text-2xl sm:text-3xl font-bold text-[#FFE194]">
+              Amica
+            </span>
+            <span className="font-cinzel text-xs sm:text-sm font-extrabold tracking-[2px] text-[#F5CE76]">
+              LATE
+            </span>
+            <span className="text-xs text-[#F5CE76]/40 hidden sm:inline">·</span>
+            <h1 className="font-serif text-xl sm:text-2xl font-bold text-white">
+              Licensing & Governance Dashboard
             </h1>
-            <span className="px-2.5 py-0.5 rounded bg-[#3E101B] border border-[#C6A052]/40 text-[#E5C378] text-[10px] font-mono uppercase tracking-wider">
-              {currentStaff.role.toUpperCase()} LEVEL ACCESS
+            <span className="px-2.5 py-0.5 rounded-lg bg-[#8E0E24] border border-[#F5CE76]/50 text-white text-xs font-mono uppercase tracking-wider font-bold">
+              {currentStaff.role.toUpperCase()}
             </span>
           </div>
-          <p className="text-xs text-stone-300 mt-1">
-            48-hour statutory review engine, member disciplinary records, rule charters, and immutable audit logs.
+          <p className="text-xs sm:text-sm text-stone-200 mt-1 font-medium">
+            Sub: <span className="text-[#FFE194] font-bold">Jonny&apos;s Late Show</span> · 23 Frith Street Soho · 48-hour statutory review engine & governance logs.
           </p>
         </div>
 
         {!isAuthorizedManager && (
-          <div className="p-3 rounded-xl bg-amber-950/60 border border-amber-600/50 text-amber-200 text-xs flex items-center gap-2">
-            <Lock className="w-4 h-4 shrink-0 text-amber-400" />
+          <div className="p-3.5 rounded-xl bg-amber-950/70 border-2 border-amber-500 text-amber-100 text-xs sm:text-sm flex items-center gap-2.5 shadow-md">
+            <Lock className="w-5 h-5 shrink-0 text-amber-400" />
             <span>
-              <strong>Read-Only Mode:</strong> Approvals and disciplinary actions require Manager or Administrator role. Switch role in top header.
+              <strong className="text-amber-300">Read-Only Mode:</strong> Approvals require Manager or Admin role. Switch role via active operator in sidebar.
             </span>
           </div>
         )}
@@ -238,91 +245,91 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
 
       {/* Error / Warning Alert Banner */}
       {errorMessage && (
-        <div className="p-4 rounded-xl bg-rose-950/80 border border-rose-500/60 text-rose-200 text-xs flex items-center justify-between shadow-lg">
+        <div className="p-4 rounded-xl bg-rose-950/90 border-2 border-rose-500 text-rose-100 text-xs sm:text-sm font-semibold flex items-center justify-between shadow-xl">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+            <AlertTriangle className="w-5 h-5 text-rose-300 shrink-0" />
             <span>{errorMessage}</span>
           </div>
           <button
             onClick={() => setErrorMessage(null)}
-            className="text-rose-400 hover:text-white p-1 rounded font-mono text-xs"
+            className="text-rose-300 hover:text-white p-1 rounded font-mono text-sm font-bold"
           >
             ✕
           </button>
         </div>
       )}
 
-      {/* KPI METRIC CARDS */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-        <div className="p-4 rounded-xl bg-[#120F11] border border-[#2B0A13]">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-stone-400">
+      {/* KPI METRIC CARDS - High Contrast & Compact Mobile */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
+        <div className="p-3.5 rounded-2xl bg-[#120A0E] border-2 border-[#F5CE76]/30 shadow-md">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-[#FFE194] font-bold">
             Active Members
           </div>
-          <div className="mt-2 font-mono text-2xl sm:text-3xl font-bold text-[#E5C378]">
+          <div className="mt-1 font-mono text-2xl sm:text-3xl font-extrabold text-white">
             {activeCount}
           </div>
-          <div className="mt-1 text-[10px] text-emerald-400">Validated trade credentials</div>
+          <div className="mt-0.5 text-xs text-emerald-300 font-semibold">Validated credentials</div>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#120F11] border border-[#2B0A13]">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-stone-400">
+        <div className="p-3.5 rounded-2xl bg-[#120A0E] border-2 border-amber-500/50 shadow-md">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-amber-300 font-bold">
             48h Waiting Queue
           </div>
-          <div className="mt-2 font-mono text-2xl sm:text-3xl font-bold text-amber-400">
+          <div className="mt-1 font-mono text-2xl sm:text-3xl font-extrabold text-amber-200">
             {waitingCount}
           </div>
-          <div className="mt-1 text-[10px] text-amber-300/80">Statutory lockout active</div>
+          <div className="mt-0.5 text-xs text-amber-300 font-semibold">Statutory lockout</div>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#120F11] border border-[#2B0A13]">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-stone-400">
+        <div className="p-3.5 rounded-2xl bg-[#120A0E] border-2 border-blue-500/50 shadow-md">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-blue-300 font-bold">
             Ready for Review
           </div>
-          <div className="mt-2 font-mono text-2xl sm:text-3xl font-bold text-blue-400">
+          <div className="mt-1 font-mono text-2xl sm:text-3xl font-extrabold text-blue-200">
             {readyCount}
           </div>
-          <div className="mt-1 text-[10px] text-blue-300">48 hours elapsed</div>
+          <div className="mt-0.5 text-xs text-blue-300 font-semibold">48h elapsed</div>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#120F11] border border-[#2B0A13]">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-stone-400">
+        <div className="p-3.5 rounded-2xl bg-[#120A0E] border-2 border-rose-500/50 shadow-md">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-rose-300 font-bold">
             Suspended
           </div>
-          <div className="mt-2 font-mono text-2xl sm:text-3xl font-bold text-rose-400">
+          <div className="mt-1 font-mono text-2xl sm:text-3xl font-extrabold text-rose-200">
             {suspendedCount}
           </div>
-          <div className="mt-1 text-[10px] text-rose-300">Disciplinary hold</div>
+          <div className="mt-0.5 text-xs text-rose-300 font-semibold">Disciplinary hold</div>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#120F11] border border-[#2B0A13]">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-stone-400">
+        <div className="p-3.5 rounded-2xl bg-[#120A0E] border-2 border-[#F5CE76]/30 shadow-md">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-[#FFE194] font-bold">
             Occupancy Live
           </div>
-          <div className="mt-2 font-mono text-2xl sm:text-3xl font-bold text-[#E5C378]">
-            {stats.totalCustomers} <span className="text-sm text-stone-500">/ 80</span>
+          <div className="mt-1 font-mono text-2xl sm:text-3xl font-extrabold text-white">
+            {stats.totalCustomers} <span className="text-base text-[#F5CE76] font-semibold">/ 80</span>
           </div>
-          <div className="mt-1 text-[10px] text-stone-400">Customers inside</div>
+          <div className="mt-0.5 text-xs text-stone-300 font-semibold">Customers inside</div>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#120F11] border border-[#2B0A13]">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-stone-400">
+        <div className="p-3.5 rounded-2xl bg-[#120A0E] border-2 border-amber-500/50 shadow-md">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-amber-300 font-bold">
             Proprietor Guests
           </div>
-          <div className="mt-2 font-mono text-2xl sm:text-3xl font-bold text-amber-300">
-            {stats.proprietorGuestsInside} <span className="text-sm text-stone-500">/ 5</span>
+          <div className="mt-1 font-mono text-2xl sm:text-3xl font-extrabold text-white">
+            {stats.proprietorGuestsInside} <span className="text-base text-amber-300 font-semibold">/ 5</span>
           </div>
-          <div className="mt-1 text-[10px] text-stone-400">Manager authorized</div>
+          <div className="mt-0.5 text-xs text-stone-300 font-semibold">Authorized list</div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-[#2B0A13] pb-2">
+      {/* Tabs - High Contrast Pill Design */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-[#F5CE76]/25 pb-2.5">
         <button
           onClick={() => setActiveTab('applications')}
-          className={`px-4 py-2 text-xs font-mono font-medium rounded-lg transition-colors ${
+          className={`px-4 py-2.5 text-xs sm:text-sm font-mono font-bold rounded-xl transition-all cursor-pointer ${
             activeTab === 'applications'
-              ? 'bg-[#3E101B] text-[#E5C378] border border-[#581625]'
-              : 'text-stone-400 hover:text-white'
+              ? 'bg-gradient-to-r from-[#8E0E24] to-[#4A0813] text-white border-2 border-[#F5CE76] shadow-lg'
+              : 'text-stone-300 hover:text-white bg-[#140C11] border border-[#F5CE76]/20'
           }`}
         >
           48-Hour Waiting & Review Queue ({waitingCount + readyCount})
@@ -330,10 +337,10 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
 
         <button
           onClick={() => setActiveTab('members')}
-          className={`px-4 py-2 text-xs font-mono font-medium rounded-lg transition-colors ${
+          className={`px-4 py-2.5 text-xs sm:text-sm font-mono font-bold rounded-xl transition-all cursor-pointer ${
             activeTab === 'members'
-              ? 'bg-[#3E101B] text-[#E5C378] border border-[#581625]'
-              : 'text-stone-400 hover:text-white'
+              ? 'bg-gradient-to-r from-[#8E0E24] to-[#4A0813] text-white border-2 border-[#F5CE76] shadow-lg'
+              : 'text-stone-300 hover:text-white bg-[#140C11] border border-[#F5CE76]/20'
           }`}
         >
           Member Roster & Actions ({members.length})
@@ -341,10 +348,10 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
 
         <button
           onClick={() => setActiveTab('rules')}
-          className={`px-4 py-2 text-xs font-mono font-medium rounded-lg transition-colors ${
+          className={`px-4 py-2.5 text-xs sm:text-sm font-mono font-bold rounded-xl transition-all cursor-pointer ${
             activeTab === 'rules'
-              ? 'bg-[#3E101B] text-[#E5C378] border border-[#581625]'
-              : 'text-stone-400 hover:text-white'
+              ? 'bg-gradient-to-r from-[#8E0E24] to-[#4A0813] text-white border-2 border-[#F5CE76] shadow-lg'
+              : 'text-stone-300 hover:text-white bg-[#140C11] border border-[#F5CE76]/20'
           }`}
         >
           Club Rules & Versions ({ruleVersions.length})

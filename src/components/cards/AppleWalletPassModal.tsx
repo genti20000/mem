@@ -167,57 +167,62 @@ export const AppleWalletPassModal: React.FC<AppleWalletPassModalProps> = ({
                 }`}
               >
                 {/* Pass Header */}
-                <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                <div className="flex items-center justify-between pb-3 border-b border-[#F5CE76]/25">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full border border-[#C6A052] bg-[#1C1216] flex items-center justify-center text-[#E5C378] font-serif font-bold text-sm">
-                      J
+                    <div className="w-8 h-8 rounded-full border border-[#F5CE76] bg-[#8E0E24] flex items-center justify-center text-[#FFE194] font-serif font-bold text-sm shadow-md">
+                      A
                     </div>
                     <div>
-                      <div className="font-serif text-xl font-bold tracking-wider text-[#E5C378]">
-                        JONNY&apos;S
+                      <div className="flex items-baseline gap-1.5 leading-none">
+                        <span className="font-script text-2xl font-bold text-[#FFE194]">
+                          Amica
+                        </span>
+                        <span className="font-cinzel text-xs font-bold tracking-[2px] text-[#F5CE76]">
+                          LATE
+                        </span>
                       </div>
-                      <div className="text-[9px] font-mono tracking-[2px] uppercase text-white/40">
-                        23 Frith Street · Soho
+                      <div className="text-[10px] font-mono tracking-wider uppercase text-white font-bold mt-0.5">
+                        Sub: <span className="text-[#FFE194]">Jonny&apos;s Late Show</span>
                       </div>
                     </div>
                   </div>
 
                   <div className="text-right">
-                    <div className="text-[9px] font-mono uppercase text-stone-400">PASS TYPE</div>
-                    <div className="text-xs font-mono font-bold text-[#C6A052]">MEMBER</div>
+                    <div className="text-[9px] font-mono uppercase text-[#FFE194] font-bold">PASS TYPE</div>
+                    <div className="text-xs font-mono font-bold text-white">MEMBER</div>
                   </div>
                 </div>
 
                 {/* Primary Field: Member Name */}
                 <div className="mt-4">
-                  <div className="text-[10px] font-mono uppercase tracking-wider text-[#C6A052]">
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-[#FFE194] font-bold">
                     MEMBER NAME
                   </div>
-                  <div className="font-serif text-2xl font-bold text-white tracking-wide truncate">
+                  <div className="font-serif text-2xl sm:text-3xl font-extrabold text-white tracking-wide truncate">
                     {member.fullName}
                   </div>
-                  <div className="text-xs text-stone-300 font-mono mt-0.5 truncate">
+                  <div className="text-xs text-stone-200 font-mono mt-0.5 truncate font-medium">
                     {member.hospitalityRole} · {member.employer}
                   </div>
                 </div>
 
                 {/* Secondary Row: Member Number & Status */}
-                <div className="grid grid-cols-3 gap-2 my-3 py-2.5 px-3 rounded-xl bg-black/40 border border-white/10">
+                <div className="grid grid-cols-3 gap-2 my-3 py-2.5 px-3 rounded-xl bg-black/50 border border-[#F5CE76]/30">
                   <div>
-                    <div className="text-[9px] font-mono uppercase text-stone-400">ID NUMBER</div>
-                    <div className="text-xs font-mono font-bold text-[#E5C378]">
+                    <div className="text-[9px] font-mono uppercase text-stone-300 font-bold">ID NUMBER</div>
+                    <div className="text-xs font-mono font-bold text-[#FFE194]">
                       {member.memberNumber}
                     </div>
                   </div>
                   <div>
-                    <div className="text-[9px] font-mono uppercase text-stone-400">STATUS</div>
+                    <div className="text-[9px] font-mono uppercase text-stone-300 font-bold">STATUS</div>
                     <div
                       className={`text-xs font-mono font-bold uppercase ${
                         member.status === 'active'
-                          ? 'text-emerald-400'
+                          ? 'text-emerald-300'
                           : member.status === 'waiting_48_hours'
-                          ? 'text-amber-400'
-                          : 'text-rose-400'
+                          ? 'text-amber-300'
+                          : 'text-rose-300'
                       }`}
                     >
                       {member.status.replace('_', ' ')}

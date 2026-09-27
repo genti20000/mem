@@ -64,26 +64,31 @@ export const IncidentLoggerModal: React.FC<IncidentLoggerModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4">
-      <div className="w-full max-w-xl rounded-2xl bg-[#121214] border border-[#581625] shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-3 sm:p-4">
+      <div className="w-full max-w-xl rounded-2xl bg-[#120A0E] border-2 border-[#F5CE76]/45 shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
         {/* Header */}
-        <div className="p-4 sm:p-5 bg-gradient-to-r from-[#2B0A13] to-[#141214] border-b border-[#3E101B] flex items-center justify-between">
+        <div className="p-4 sm:p-5 bg-gradient-to-r from-[#8E0E24] via-[#581625] to-[#34050D] border-b-2 border-[#F5CE76]/35 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#3E101B] border border-amber-500/40 flex items-center justify-center text-amber-400">
-              <ShieldAlert className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl bg-black/50 border-2 border-[#F5CE76] flex items-center justify-center text-[#FFE194] shadow-md">
+              <ShieldAlert className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="font-serif text-lg sm:text-xl font-bold text-[#E5C378]">
-                Licensing Incident Register
-              </h2>
-              <div className="text-xs text-stone-400">
-                Statutory log for Westminster Council & Police Inspection
+              <div className="flex items-center gap-2">
+                <span className="font-script text-xl sm:text-2xl font-bold text-[#FFE194]">Amica</span>
+                <span className="font-cinzel text-xs font-bold text-[#F5CE76]">LATE</span>
+                <span className="text-white/40">·</span>
+                <h2 className="font-serif text-base sm:text-lg font-bold text-white">
+                  Licensing Incident Register
+                </h2>
+              </div>
+              <div className="text-xs text-stone-200 font-medium">
+                Westminster Police & Licensing Inspection Compliance
               </div>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-stone-400 hover:text-white p-2 rounded-lg hover:bg-[#1F1B1D]"
+            className="text-stone-300 hover:text-white p-2 rounded-xl hover:bg-black/40 border border-transparent hover:border-[#F5CE76]/30 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -92,16 +97,16 @@ export const IncidentLoggerModal: React.FC<IncidentLoggerModalProps> = ({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 overflow-y-auto">
           <div>
-            <label className="block text-xs font-mono uppercase tracking-wider text-stone-300 mb-1.5">
+            <label className="block text-xs sm:text-sm font-mono uppercase tracking-wider text-[#FFE194] font-bold mb-1.5">
               Incident Statutory Category *
             </label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value as IncidentCategory)}
-              className="w-full px-3 py-2.5 bg-[#0E0C0E] border border-[#3E101B] rounded-lg text-xs sm:text-sm text-stone-200 focus:outline-none focus:border-[#C6A052]"
+              className="w-full px-3.5 py-2.5 bg-[#090507] border-2 border-[#F5CE76]/35 rounded-xl text-xs sm:text-sm text-white font-medium focus:outline-none focus:border-[#FFE194]"
             >
               {INCIDENT_CATEGORIES.map((c) => (
-                <option key={c.id} value={c.id} className="bg-[#121214] text-stone-200">
+                <option key={c.id} value={c.id} className="bg-[#120A0E] text-white">
                   {c.label}
                 </option>
               ))}
@@ -109,7 +114,7 @@ export const IncidentLoggerModal: React.FC<IncidentLoggerModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-mono uppercase tracking-wider text-stone-300 mb-1.5">
+            <label className="block text-xs sm:text-sm font-mono uppercase tracking-wider text-stone-200 font-bold mb-1.5">
               Incident Summary & Description *
             </label>
             <textarea
@@ -118,13 +123,13 @@ export const IncidentLoggerModal: React.FC<IncidentLoggerModalProps> = ({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Detail the event, location within venue, observations..."
-              className="w-full px-3 py-2 bg-[#0E0C0E] border border-[#3E101B] rounded-lg text-xs text-stone-200 placeholder-stone-500 focus:outline-none focus:border-[#C6A052]"
+              className="w-full px-3.5 py-2.5 bg-[#090507] border-2 border-[#F5CE76]/35 rounded-xl text-xs sm:text-sm text-white placeholder-stone-400 focus:outline-none focus:border-[#FFE194]"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-mono uppercase tracking-wider text-stone-300 mb-1.5">
+              <label className="block text-xs sm:text-sm font-mono uppercase tracking-wider text-stone-200 font-bold mb-1.5">
                 Persons Involved (Optional)
               </label>
               <input
@@ -132,11 +137,11 @@ export const IncidentLoggerModal: React.FC<IncidentLoggerModalProps> = ({
                 value={personsInvolved}
                 onChange={(e) => setPersonsInvolved(e.target.value)}
                 placeholder="Names, descriptions, or member IDs"
-                className="w-full px-3 py-2 bg-[#0E0C0E] border border-[#3E101B] rounded-lg text-xs text-stone-200 placeholder-stone-500 focus:outline-none focus:border-[#C6A052]"
+                className="w-full px-3.5 py-2 bg-[#090507] border-2 border-[#F5CE76]/35 rounded-xl text-xs sm:text-sm text-white placeholder-stone-400 focus:outline-none focus:border-[#FFE194]"
               />
             </div>
             <div>
-              <label className="block text-xs font-mono uppercase tracking-wider text-stone-300 mb-1.5">
+              <label className="block text-xs sm:text-sm font-mono uppercase tracking-wider text-stone-200 font-bold mb-1.5">
                 CCTV Camera Reference
               </label>
               <input
@@ -144,13 +149,13 @@ export const IncidentLoggerModal: React.FC<IncidentLoggerModalProps> = ({
                 value={cctvReference}
                 onChange={(e) => setCctvReference(e.target.value)}
                 placeholder="e.g. CAM-01-ENTRANCE-2345"
-                className="w-full px-3 py-2 bg-[#0E0C0E] border border-[#3E101B] rounded-lg text-xs text-stone-200 placeholder-stone-500 focus:outline-none focus:border-[#C6A052]"
+                className="w-full px-3.5 py-2 bg-[#090507] border-2 border-[#F5CE76]/35 rounded-xl text-xs sm:text-sm text-white placeholder-stone-400 focus:outline-none focus:border-[#FFE194]"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-mono uppercase tracking-wider text-stone-300 mb-1.5">
+            <label className="block text-xs sm:text-sm font-mono uppercase tracking-wider text-stone-200 font-bold mb-1.5">
               Immediate Action Taken & Resolution *
             </label>
             <textarea
@@ -159,12 +164,12 @@ export const IncidentLoggerModal: React.FC<IncidentLoggerModalProps> = ({
               value={actionTaken}
               onChange={(e) => setActionTaken(e.target.value)}
               placeholder="e.g. Refused service, escorted to Frith St, supervisor notified, taxi hailed..."
-              className="w-full px-3 py-2 bg-[#0E0C0E] border border-[#3E101B] rounded-lg text-xs text-stone-200 placeholder-stone-500 focus:outline-none focus:border-[#C6A052]"
+              className="w-full px-3.5 py-2 bg-[#090507] border-2 border-[#F5CE76]/35 rounded-xl text-xs sm:text-sm text-white placeholder-stone-400 focus:outline-none focus:border-[#FFE194]"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-mono uppercase tracking-wider text-stone-300 mb-1.5">
+            <label className="block text-xs sm:text-sm font-mono uppercase tracking-wider text-stone-200 font-bold mb-1.5">
               CAD / Police CAD Number (If Emergency Services Attended)
             </label>
             <input
@@ -172,23 +177,23 @@ export const IncidentLoggerModal: React.FC<IncidentLoggerModalProps> = ({
               value={policeIncidentNumber}
               onChange={(e) => setPoliceIncidentNumber(e.target.value)}
               placeholder="e.g. MET-CAD-5921/25SEP26"
-              className="w-full px-3 py-2 bg-[#0E0C0E] border border-[#3E101B] rounded-lg text-xs text-stone-200 placeholder-stone-500 focus:outline-none focus:border-[#C6A052]"
+              className="w-full px-3.5 py-2 bg-[#090507] border-2 border-[#F5CE76]/35 rounded-xl text-xs sm:text-sm text-white placeholder-stone-400 focus:outline-none focus:border-[#FFE194]"
             />
           </div>
 
-          <div className="pt-2 flex justify-between items-center text-xs text-stone-400">
-            <span>Logging Officer: <strong>{currentStaff.name} ({currentStaff.badgeNumber})</strong></span>
+          <div className="pt-3 border-t border-[#F5CE76]/20 flex flex-col sm:flex-row justify-between sm:items-center gap-3 text-xs sm:text-sm text-stone-300">
+            <span>Logging Officer: <strong className="text-white">{currentStaff.name} ({currentStaff.badgeNumber})</strong></span>
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-lg bg-[#201B1E] hover:bg-[#2C2428] text-stone-300 font-medium"
+                className="px-4 py-2.5 rounded-xl bg-[#201018] hover:bg-[#2C1822] text-stone-200 font-bold border border-[#F5CE76]/30 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-lg bg-[#581625] hover:bg-[#6E1C2F] text-[#E5C378] border border-[#C6A052]/40 font-medium font-serif"
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#8E0E24] to-[#4A0813] hover:from-[#A8102B] hover:to-[#5E0B1A] text-white border-2 border-[#F5CE76] font-bold font-serif shadow-lg cursor-pointer active:scale-95"
               >
                 Commit to Incident Log
               </button>

@@ -41,6 +41,8 @@ export const AppleWalletPassModal: React.FC<AppleWalletPassModalProps> = ({
   const [isFlipped, setIsFlipped] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
+  const [copyToast, setCopyToast] = useState(false);
+  const [showIosGuide, setShowIosGuide] = useState(false);
   const [computedQrUrl, setComputedQrUrl] = useState<string>(initialQrDataUrl || '');
   const [computedToken, setComputedToken] = useState<string>(initialQrToken || '');
   const [computedRemaining, setComputedRemaining] = useState<number>(initialSecondsRemaining);
@@ -344,6 +346,7 @@ export const AppleWalletPassModal: React.FC<AppleWalletPassModalProps> = ({
 
           {/* Official "Add to Apple Wallet" Action Badge */}
           <div className="w-full max-w-sm mt-5 space-y-2.5">
+            {/* Primary Download .pkpass */}
             <button
               type="button"
               onClick={handleDownloadPkpass}
@@ -356,10 +359,10 @@ export const AppleWalletPassModal: React.FC<AppleWalletPassModalProps> = ({
               </svg>
               <div className="text-left">
                 <div className="text-[10px] font-sans uppercase tracking-wider text-stone-400 leading-none">
-                  Add to
+                  Download .pkpass
                 </div>
                 <div className="text-base font-semibold tracking-tight text-white leading-tight">
-                  Apple Wallet
+                  Apple Wallet File
                 </div>
               </div>
               <Download className="w-4 h-4 text-stone-400 ml-auto group-hover:text-white transition-colors" />
@@ -372,6 +375,50 @@ export const AppleWalletPassModal: React.FC<AppleWalletPassModalProps> = ({
               </div>
             )}
 
+            {/* Instant Mobile Pass for iPhone Button */}
+            <a
+              href={`/?tab=cards&member=${encodeURIComponent(member.memberNumber)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#3E101B] to-[#250A11] hover:from-[#4E1422] hover:to-[#2F0D16] border border-[#C6A052]/50 text-[#F5E6CA] flex items-center justify-center gap-2 text-xs font-mono font-bold shadow-md cursor-pointer transition-all"
+            >
+              <Sparkles className="w-4 h-4 text-[#E5C378]" />
+              <span>Open Live Pass on iPhone (Add to Home Screen)</span>
+              <ExternalLink className="w-3.5 h-3.5 text-stone-400 ml-auto" />
+            </a>
+
+            {/* iOS Pass Info Notice */}
+            <div className="p-3 rounded-xl bg-[#140D10] border border-[#3E101B] text-left">
+              <button
+                type="button"
+                onClick={() => setShowIosGuide(!showIosGuide)}
+                className="w-full flex items-center justify-between text-[11px] font-mono text-[#E5C378] hover:text-white"
+              >
+                <div className="flex items-center gap-1.5 font-semibold">
+                  <Info className="w-3.5 h-3.5 text-[#C6A052]" />
+                  <span>iPhone / Apple Wallet Note</span>
+                </div>
+                <span className="text-[10px] text-stone-400">{showIosGuide ? 'Hide' : 'Why can’t passes be added?'}</span>
+              </button>
+
+              {showIosGuide && (
+                <div className="mt-2.5 pt-2 border-t border-white/[0.06] text-[11px] text-stone-300 space-y-2 leading-relaxed">
+                  <p>
+                    <strong>Why iOS might block raw .pkpass files:</strong> Apple's native Wallet app requires passes to be digitally signed by a registered Apple Developer Account certificate ($99/yr Apple CA).
+                  </p>
+                  <p className="text-amber-200/90 font-medium">
+                    <strong>100% Reliable Fix for iPhone:</strong>
+                  </p>
+                  <ol className="list-decimal pl-4 space-y-1 text-stone-400 text-[10px]">
+                    <li>Tap <strong>"Open Live Pass on iPhone"</strong> above (or open the link sent via SMS/Email).</li>
+                    <li>In Safari on your iPhone, tap the <strong>Share</strong> button (square with arrow up).</li>
+                    <li>Scroll down and tap <strong>"Add to Home Screen"</strong>.</li>
+                    <li>The Jonny's Soho pass is now pinned to your phone with live dynamic QR tokens for door entry!</li>
+                  </ol>
+                </div>
+              )}
+            </div>
+
             {/* Secondary actions: Send Pass / Share */}
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -383,21 +430,23 @@ export const AppleWalletPassModal: React.FC<AppleWalletPassModalProps> = ({
                 className="py-2.5 px-3 rounded-xl bg-[#1A1417] hover:bg-[#251A1F] border border-[#3E101B] text-stone-200 text-xs font-mono flex items-center justify-center gap-2 transition-all active:scale-95"
               >
                 <Mail className="w-3.5 h-3.5 text-[#C6A052]" />
-                <span>Send Pass Email</span>
+                <span>Send Pass Link</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => {
+                  const passUrl = `${window.location.origin}/?tab=cards&member=${encodeURIComponent(member.memberNumber)}`;
                   if (navigator.share) {
                     navigator.share({
                       title: `JONNY'S Membership Pass - ${member.fullName}`,
                       text: `Digital membership pass for Jonny's Soho at 23 Frith Street (${member.memberNumber})`,
-                      url: window.location.href,
+                      url: passUrl,
                     }).catch(() => {});
                   } else {
-                    navigator.clipboard.writeText(window.location.href);
-                    alert('Pass link copied to clipboard!');
+                    navigator.clipboard.writeText(passUrl);
+                    setCopyToast(true);
+                    setTimeout(() => setCopyToast(false), 3000);
                   }
                 }}
                 className="py-2.5 px-3 rounded-xl bg-[#1A1417] hover:bg-[#251A1F] border border-[#3E101B] text-stone-200 text-xs font-mono flex items-center justify-center gap-2 transition-all active:scale-95"
@@ -406,13 +455,19 @@ export const AppleWalletPassModal: React.FC<AppleWalletPassModalProps> = ({
                 <span>Share Pass Link</span>
               </button>
             </div>
+
+            {copyToast && (
+              <div className="p-2 rounded-lg bg-emerald-950/80 border border-emerald-500/60 text-emerald-300 text-xs font-mono text-center animate-fadeIn">
+                ✓ Pass link copied to clipboard!
+              </div>
+            )}
           </div>
         </div>
 
         {/* Footer guidance note */}
         <div className="px-5 py-3 bg-[#120F12] border-t border-[#2C0E17] flex items-center justify-between text-[11px] text-stone-400 font-mono">
           <span>Tap pass to view reverse side</span>
-          <span className="text-[#C6A052]">iOS & macOS Compatible</span>
+          <span className="text-[#C6A052]">iOS & Android Compatible</span>
         </div>
       </div>
     </div>

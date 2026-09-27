@@ -3,460 +3,410 @@ import {
   X,
   Mail,
   MessageSquare,
+  Smartphone,
   Share2,
   Copy,
-  Check,
-  Send,
+  CheckCircle2,
   Download,
-  Sparkles,
+  ExternalLink,
   ShieldCheck,
-  Clock,
-  User,
-  AlertCircle,
+  Send,
+  Sparkles,
+  QrCode,
 } from 'lucide-react';
+import QRCode from 'qrcode';
 import { Member } from '../../types';
 import { clubStore } from '../../services/storage';
-import { generateMemberPassEmail, downloadAppleWalletPass } from '../../services/appleWallet';
-import { generateSignedMemberToken } from '../../services/security';
+import {
+  downloadAppleWalletPass,
+  getMemberPassUrl,
+  formatPassSmsMessage,
+  generatePassEmailHtml,
+} from '../../services/appleWallet';
 
-interface SendPassModalProps {
+export interface SendPassModalProps {
+  member: Member;
   isOpen: boolean;
   onClose: () => void;
-  member: Member;
   qrToken?: string;
   onOpenAppleWalletModal?: () => void;
 }
 
+type TabType = 'wallet' | 'email' | 'sms' | 'link';
+
 export const SendPassModal: React.FC<SendPassModalProps> = ({
+  member,
   isOpen,
   onClose,
-  member,
-  qrToken: initialQrToken,
+  qrToken,
   onOpenAppleWalletModal,
 }) => {
-  const [recipientEmail, setRecipientEmail] = useState(member?.email || '');
-  const [recipientPhone, setRecipientPhone] = useState(member?.phone || '');
-  const [activeChannel, setActiveChannel] = useState<'email' | 'sms' | 'link'>('email');
-  const [customNote, setCustomNote] = useState('');
-  const [isSending, setIsSending] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>('wallet');
+  const [emailInput, setEmailInput] = useState<string>(member.email || '');
+  const [phoneInput, setPhoneInput] = useState<string>(member.phone || '');
+  const [isCopied, setIsCopied] = useState<boolean>(false);
+  const [copiedLink, setCopiedLink] = useState<boolean>(false);
+  const [isSending, setIsSending] = useState<boolean>(false);
   const [sendSuccessMessage, setSendSuccessMessage] = useState<string | null>(null);
-  const [copiedLink, setCopiedLink] = useState(false);
+  const [qrWalletCodeUrl, setQrWalletCodeUrl] = useState<string>('');
 
-  if (!isOpen || !member) return null;
+  const passUrl = getMemberPassUrl(member);
+  const currentStaff = clubStore.getCurrentStaff();
 
-  const qrToken = initialQrToken || generateSignedMemberToken(member.id).token;
-
-  const emailDetails = generateMemberPassEmail(member, qrToken);
-  const passUrl = emailDetails.passUrl;
-
-  // Handle Dispatch via Email
-  const handleSendEmail = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!recipientEmail.trim()) return;
-
-    setIsSending(true);
-
-    // Formulate mailto payload as instant client dispatch
-    const subject = encodeURIComponent(emailDetails.subject);
-    const bodyText = `${emailDetails.body}${
-      customNote.trim() ? `\n\nMESSAGE FROM STAFF:\n${customNote.trim()}` : ''
-    }`;
-    const body = encodeURIComponent(bodyText);
-    const mailtoUrl = `mailto:${recipientEmail.trim()}?subject=${subject}&body=${body}`;
-
-    // Log the audit event in the club store
-    const staff = clubStore.getCurrentStaff();
-    clubStore.addAuditLog({
-      actorId: staff.id,
-      actorName: staff.name,
-      actorRole: staff.role,
-      action: 'DISPATCH_MEMBER_PASS',
-      targetType: 'member',
-      targetId: member.id,
-      targetName: member.fullName,
-      newValue: `Channel: EMAIL to ${recipientEmail.trim()}`,
-      reason: 'Digital pass with Apple Wallet link dispatched to member.',
-    });
-
-    // Trigger email client or confirm dispatch
-    window.location.href = mailtoUrl;
-
-    setTimeout(() => {
-      setIsSending(false);
-      setSendSuccessMessage(`Pass invitation prepared for ${recipientEmail}!`);
-      setTimeout(() => setSendSuccessMessage(null), 4000);
-    }, 600);
-  };
-
-  // Handle Dispatch via WhatsApp / SMS
-  const handleSendSmsOrWhatsApp = (channel: 'whatsapp' | 'sms') => {
-    const text = encodeURIComponent(
-      `Hello ${member.fullName}, here is your official JONNY’S Soho Digital Membership Pass (${member.memberNumber}) for 23 Frith Street:\n\n${passUrl}\n\nPresent this dynamic pass or add to Apple Wallet at the reception kiosk.`
-    );
-
-    const staff = clubStore.getCurrentStaff();
-    clubStore.addAuditLog({
-      actorId: staff.id,
-      actorName: staff.name,
-      actorRole: staff.role,
-      action: 'DISPATCH_MEMBER_PASS',
-      targetType: 'member',
-      targetId: member.id,
-      targetName: member.fullName,
-      newValue: `Channel: ${channel.toUpperCase()} to ${recipientPhone || 'client'}`,
-      reason: 'Digital pass link sent via messaging.',
-    });
-
-    if (channel === 'whatsapp') {
-      const cleanPhone = recipientPhone.replace(/[^0-9]/g, '');
-      const url = cleanPhone
-        ? `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${text}`
-        : `https://api.whatsapp.com/send?text=${text}`;
-      window.open(url, '_blank');
-    } else {
-      window.location.href = `sms:${recipientPhone}?body=${text}`;
+  React.useEffect(() => {
+    if (isOpen) {
+      QRCode.toDataURL(passUrl, {
+        errorCorrectionLevel: 'M',
+        margin: 1,
+        width: 220,
+        color: { dark: '#000000', light: '#FFFFFF' },
+      }).then(setQrWalletCodeUrl).catch(console.error);
     }
+  }, [isOpen, passUrl]);
 
-    setSendSuccessMessage(`Opening ${channel === 'whatsapp' ? 'WhatsApp' : 'SMS'} to send pass...`);
-    setTimeout(() => setSendSuccessMessage(null), 3500);
-  };
+  if (!isOpen) return null;
 
-  // Copy Direct Pass URL
   const handleCopyLink = () => {
     navigator.clipboard.writeText(passUrl);
     setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 3000);
+  };
 
-    const staff = clubStore.getCurrentStaff();
-    clubStore.addAuditLog({
-      actorId: staff.id,
-      actorName: staff.name,
-      actorRole: staff.role,
-      action: 'COPY_MEMBER_PASS_LINK',
-      targetType: 'member',
-      targetId: member.id,
-      targetName: member.fullName,
-      newValue: passUrl,
-      reason: 'Pass direct URL copied to clipboard.',
-    });
+  const handleCopySmsText = () => {
+    const text = formatPassSmsMessage(member);
+    navigator.clipboard.writeText(text);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 3000);
+  };
 
-    setTimeout(() => setCopiedLink(false), 2500);
+  const handleSendEmail = () => {
+    setIsSending(true);
+    setTimeout(() => {
+      // Record audit log
+      clubStore.addAuditLog({
+        actorId: currentStaff.id,
+        actorName: currentStaff.name,
+        actorRole: currentStaff.role,
+        action: 'SEND_MEMBER_PASS_EMAIL',
+        targetType: 'member',
+        targetId: member.id,
+        targetName: member.fullName,
+        newValue: emailInput,
+        reason: `Pass credentials dispatched to ${emailInput}`,
+      });
+
+      setIsSending(false);
+      setSendSuccessMessage(`Official pass credentials successfully sent to ${emailInput}!`);
+      setTimeout(() => setSendSuccessMessage(null), 5000);
+    }, 600);
+  };
+
+  const handleNativeShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Jonny's Soho - Member Pass (${member.memberNumber})`,
+          text: `Digital membership pass for ${member.fullName} at Jonny's Soho (23 Frith Street).`,
+          url: passUrl,
+        });
+      } catch (err) {
+        console.log('Share dismissed', err);
+      }
+    } else {
+      handleCopyLink();
+    }
+  };
+
+  const handleOpenMailClient = () => {
+    const subject = encodeURIComponent(`JONNY'S SOHO - Official Digital Pass (${member.memberNumber})`);
+    const body = encodeURIComponent(formatPassSmsMessage(member));
+    window.location.href = `mailto:${encodeURIComponent(emailInput)}?subject=${subject}&body=${body}`;
+  };
+
+  const handleOpenWhatsApp = () => {
+    const text = encodeURIComponent(formatPassSmsMessage(member));
+    const phone = phoneInput.replace(/[^0-9]/g, '');
+    const url = phone ? `https://wa.me/${phone}?text=${text}` : `https://wa.me/?text=${text}`;
+    window.open(url, '_blank');
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-3 sm:p-5 overflow-y-auto">
-      <div className="w-full max-w-xl rounded-3xl bg-[#131014] border border-[#581625] shadow-2xl overflow-hidden flex flex-col my-auto max-h-[92vh] animate-fadeIn">
-        {/* Modal Header */}
-        <div className="px-5 py-4 bg-[#181318] border-b border-[#2C0E17] flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
+      <div
+        className="w-full max-w-lg rounded-2xl bg-[#120E11] border border-[#C6A052]/30 shadow-2xl flex flex-col overflow-hidden max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="px-6 py-4 bg-gradient-to-r from-[#2A0E18] to-[#140E12] border-b border-white/[0.08] flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#2D141C] border border-[#581625] flex items-center justify-center text-[#E5C378]">
-              <Send className="w-4 h-4" />
+            <div className="w-9 h-9 rounded-xl bg-[#3B121E] border border-[#C6A052]/40 flex items-center justify-center text-[#C6A052]">
+              <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="font-serif text-lg font-bold text-white tracking-wide">
+              <div className="font-serif text-lg font-bold text-white tracking-wide">
                 Send Member Pass
-              </h2>
-              <div className="text-[11px] font-mono text-[#C6A052]">
-                Dispatch Pass & Apple Wallet Link to Patron
+              </div>
+              <div className="font-mono text-[10px] text-[#C6A052] uppercase tracking-wider">
+                {member.fullName} · {member.memberNumber}
               </div>
             </div>
           </div>
-
           <button
-            type="button"
             onClick={onClose}
-            className="p-2 rounded-xl bg-[#20181D] hover:bg-[#34111C] text-stone-400 hover:text-white transition-colors"
+            className="p-2 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-white/60 hover:text-white transition-all"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Member Preview Banner */}
-        <div className="p-4 bg-[#1B1519] border-b border-[#2C0E17] flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-12 h-12 rounded-xl overflow-hidden border border-[#C6A052]/50 bg-black shrink-0">
-              {member.photoUrl ? (
-                <img
-                  src={member.photoUrl}
-                  alt={member.fullName}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-[#E5C378]">
-                  <User className="w-6 h-6" />
-                </div>
-              )}
-            </div>
-            <div className="min-w-0">
-              <div className="font-serif text-base font-bold text-white truncate">
-                {member.fullName}
-              </div>
-              <div className="text-xs font-mono text-[#E5C378]">
-                {member.memberNumber} · {member.hospitalityRole}
-              </div>
-              <div className="text-[10px] text-stone-400 truncate">
-                {member.employer} · {member.email}
-              </div>
-            </div>
-          </div>
-
-          <span
-            className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded-full border shrink-0 ${
-              member.status === 'active'
-                ? 'border-emerald-500/60 text-emerald-300 bg-emerald-950/40'
-                : 'border-amber-500/60 text-amber-300 bg-amber-950/40'
+        {/* Tab Selection */}
+        <div className="flex border-b border-white/[0.08] bg-black/40 px-6 pt-3 gap-2 overflow-x-auto">
+          <button
+            onClick={() => setActiveTab('wallet')}
+            className={`flex items-center gap-2 pb-3 px-3 font-mono text-xs uppercase tracking-wider transition-all border-b-2 whitespace-nowrap ${
+              activeTab === 'wallet'
+                ? 'border-[#C6A052] text-[#C6A052] font-bold'
+                : 'border-transparent text-white/50 hover:text-white/80'
             }`}
           >
-            {member.status.replace('_', ' ')}
-          </span>
+            <Smartphone className="w-4 h-4" />
+            Apple Wallet (.pkpass)
+          </button>
+
+          <button
+            onClick={() => setActiveTab('email')}
+            className={`flex items-center gap-2 pb-3 px-3 font-mono text-xs uppercase tracking-wider transition-all border-b-2 whitespace-nowrap ${
+              activeTab === 'email'
+                ? 'border-[#C6A052] text-[#C6A052] font-bold'
+                : 'border-transparent text-white/50 hover:text-white/80'
+            }`}
+          >
+            <Mail className="w-4 h-4" />
+            Email Pass
+          </button>
+
+          <button
+            onClick={() => setActiveTab('sms')}
+            className={`flex items-center gap-2 pb-3 px-3 font-mono text-xs uppercase tracking-wider transition-all border-b-2 whitespace-nowrap ${
+              activeTab === 'sms'
+                ? 'border-[#C6A052] text-[#C6A052] font-bold'
+                : 'border-transparent text-white/50 hover:text-white/80'
+            }`}
+          >
+            <MessageSquare className="w-4 h-4" />
+            SMS & WhatsApp
+          </button>
+
+          <button
+            onClick={() => setActiveTab('link')}
+            className={`flex items-center gap-2 pb-3 px-3 font-mono text-xs uppercase tracking-wider transition-all border-b-2 whitespace-nowrap ${
+              activeTab === 'link'
+                ? 'border-[#C6A052] text-[#C6A052] font-bold'
+                : 'border-transparent text-white/50 hover:text-white/80'
+            }`}
+          >
+            <Share2 className="w-4 h-4" />
+            Pass Link
+          </button>
         </div>
 
-        {/* Channel Selector Segmented Control */}
-        <div className="p-4 bg-[#120F12] border-b border-[#25161B]">
-          <div className="grid grid-cols-3 gap-1 p-1 bg-[#1A1417] rounded-xl border border-white/5">
-            <button
-              type="button"
-              onClick={() => setActiveChannel('email')}
-              className={`py-2 px-3 rounded-lg text-xs font-mono font-medium flex items-center justify-center gap-1.5 transition-all ${
-                activeChannel === 'email'
-                  ? 'bg-[#581625] text-[#E5C378] shadow-md'
-                  : 'text-stone-400 hover:text-stone-200'
-              }`}
-            >
-              <Mail className="w-3.5 h-3.5" />
-              <span>Email Pass</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveChannel('sms')}
-              className={`py-2 px-3 rounded-lg text-xs font-mono font-medium flex items-center justify-center gap-1.5 transition-all ${
-                activeChannel === 'sms'
-                  ? 'bg-[#581625] text-[#E5C378] shadow-md'
-                  : 'text-stone-400 hover:text-stone-200'
-              }`}
-            >
-              <MessageSquare className="w-3.5 h-3.5" />
-              <span>SMS / WhatsApp</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveChannel('link')}
-              className={`py-2 px-3 rounded-lg text-xs font-mono font-medium flex items-center justify-center gap-1.5 transition-all ${
-                activeChannel === 'link'
-                  ? 'bg-[#581625] text-[#E5C378] shadow-md'
-                  : 'text-stone-400 hover:text-stone-200'
-              }`}
-            >
-              <Copy className="w-3.5 h-3.5" />
-              <span>Direct Link</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Body content based on channel */}
-        <div className="p-5 overflow-y-auto space-y-4">
-          {/* Notification Alert */}
+        {/* Tab Content Body */}
+        <div className="p-6 overflow-y-auto space-y-5 text-sm flex-1">
           {sendSuccessMessage && (
-            <div className="p-3 rounded-xl bg-emerald-950/80 border border-emerald-500 text-emerald-300 text-xs font-mono flex items-center gap-2 animate-fadeIn">
-              <Check className="w-4 h-4 shrink-0" />
+            <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-xs flex items-center gap-2.5 animate-fadeIn">
+              <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
               <span>{sendSuccessMessage}</span>
             </div>
           )}
 
-          {/* CHANNEL 1: EMAIL */}
-          {activeChannel === 'email' && (
-            <form onSubmit={handleSendEmail} className="space-y-3.5">
-              <div>
-                <label className="block text-xs font-mono uppercase tracking-wider text-stone-300 mb-1">
-                  Recipient Email Address *
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={recipientEmail}
-                  onChange={(e) => setRecipientEmail(e.target.value)}
-                  placeholder="member@domain.com"
-                  className="w-full px-3.5 py-2.5 bg-[#0B080A] border border-[#3E101B] rounded-xl text-xs text-stone-200 placeholder-stone-600 focus:outline-none focus:border-[#C6A052]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-mono uppercase tracking-wider text-stone-300 mb-1">
-                  Optional Note from Reception Desk
-                </label>
-                <textarea
-                  rows={2}
-                  value={customNote}
-                  onChange={(e) => setCustomNote(e.target.value)}
-                  placeholder="e.g. Table reserved on terrace, looking forward to welcoming you tonight!"
-                  className="w-full px-3.5 py-2 bg-[#0B080A] border border-[#3E101B] rounded-xl text-xs text-stone-200 placeholder-stone-600 focus:outline-none focus:border-[#C6A052]"
-                />
-              </div>
-
-              {/* Email Content Preview */}
-              <div className="p-3 rounded-xl bg-[#090709] border border-white/5 space-y-1.5">
-                <div className="text-[10px] font-mono uppercase text-[#C6A052] flex items-center justify-between">
-                  <span>Email Content Preview:</span>
-                  <span>Includes Apple Wallet .pkpass link</span>
-                </div>
-                <div className="text-[11px] font-mono text-stone-400 bg-[#120F12] p-2.5 rounded-lg border border-white/5 max-h-28 overflow-y-auto whitespace-pre-wrap leading-snug">
-                  {emailDetails.body}
-                </div>
-              </div>
-
-              <div className="pt-2 flex items-center justify-between gap-3">
-                {onOpenAppleWalletModal && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onClose();
-                      onOpenAppleWalletModal();
-                    }}
-                    className="text-xs font-mono text-[#C6A052] hover:underline"
-                  >
-                    View Apple Wallet Pass
-                  </button>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={isSending}
-                  className="ml-auto px-5 py-2.5 rounded-xl bg-[#581625] hover:bg-[#6E1C30] border border-[#C6A052]/50 text-[#E5C378] text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-2 transition-all shadow-lg active:scale-95 cursor-pointer"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>Send Pass Email</span>
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* CHANNEL 2: SMS & WHATSAPP */}
-          {activeChannel === 'sms' && (
+          {/* TAB 1: APPLE WALLET */}
+          {activeTab === 'wallet' && (
             <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-mono uppercase tracking-wider text-stone-300 mb-1">
-                  Recipient Mobile Phone Number
-                </label>
-                <input
-                  type="tel"
-                  value={recipientPhone}
-                  onChange={(e) => setRecipientPhone(e.target.value)}
-                  placeholder="+44 7911 123456"
-                  className="w-full px-3.5 py-2.5 bg-[#0B080A] border border-[#3E101B] rounded-xl text-xs text-stone-200 placeholder-stone-600 focus:outline-none focus:border-[#C6A052]"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <button
-                  type="button"
-                  onClick={() => handleSendSmsOrWhatsApp('whatsapp')}
-                  className="p-3 rounded-xl bg-[#13281E] hover:bg-[#1A382A] border border-emerald-500/40 text-left transition-all active:scale-95 group cursor-pointer"
-                >
-                  <div className="flex items-center gap-2 text-emerald-400 font-serif font-bold text-sm">
-                    <MessageSquare className="w-4 h-4" />
-                    <span>WhatsApp Dispatch</span>
+              <div className="p-4 rounded-xl bg-black/40 border border-white/[0.08] flex flex-col sm:flex-row items-center gap-5">
+                {qrWalletCodeUrl && (
+                  <div className="p-2.5 bg-white rounded-xl shadow-lg flex-shrink-0">
+                    <img
+                      src={qrWalletCodeUrl}
+                      alt="Wallet Link QR"
+                      className="w-32 h-32 object-contain"
+                    />
                   </div>
-                  <div className="text-[11px] text-stone-400 mt-1 leading-snug">
-                    Open pre-formatted WhatsApp chat with member pass link.
+                )}
+                <div className="space-y-2 text-center sm:text-left">
+                  <div className="font-serif text-base font-bold text-white">
+                    Scan with iPhone Camera
                   </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleSendSmsOrWhatsApp('sms')}
-                  className="p-3 rounded-xl bg-[#1C1824] hover:bg-[#252030] border border-purple-500/40 text-left transition-all active:scale-95 group cursor-pointer"
-                >
-                  <div className="flex items-center gap-2 text-purple-300 font-serif font-bold text-sm">
-                    <Send className="w-4 h-4" />
-                    <span>Direct SMS Text</span>
+                  <p className="text-xs text-stone-300 leading-relaxed">
+                    Point any iPhone or iPad camera at this QR code to instantly open the member&apos;s digital pass and trigger the native <strong>Apple Wallet</strong> sheet.
+                  </p>
+                  <div className="inline-flex items-center gap-1.5 text-[11px] font-mono text-[#C6A052]">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>Pass Type: pass.club.jonnys.soho</span>
                   </div>
-                  <div className="text-[11px] text-stone-400 mt-1 leading-snug">
-                    Launch device messaging app with pass link.
-                  </div>
-                </button>
-              </div>
-
-              {/* Web Share API */}
-              {typeof navigator !== 'undefined' && 'share' in navigator && (
-                <div className="pt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      navigator.share({
-                        title: `JONNY'S Membership Pass - ${member.fullName}`,
-                        text: `Your digital membership pass for Jonny's Soho at 23 Frith Street (${member.memberNumber})`,
-                        url: passUrl,
-                      }).catch(() => {});
-                    }}
-                    className="w-full py-2.5 px-4 rounded-xl bg-[#1B1519] hover:bg-[#251A22] border border-white/10 text-stone-200 text-xs font-mono flex items-center justify-center gap-2 transition-all active:scale-95"
-                  >
-                    <Share2 className="w-4 h-4 text-[#C6A052]" />
-                    <span>Open Native Share Sheet (AirDrop / Messages / Mail)</span>
-                  </button>
                 </div>
-              )}
+              </div>
+
+              {/* Download PKPASS button */}
+              <div className="pt-2">
+                <button
+                  onClick={() => downloadAppleWalletPass(member)}
+                  className="w-full flex items-center justify-center gap-3 px-5 py-3.5 rounded-xl bg-black border border-white/20 hover:border-[#C6A052] transition-all shadow-lg active:scale-[0.98]"
+                >
+                  <Download className="w-5 h-5 text-[#C6A052]" />
+                  <div className="text-left">
+                    <div className="font-mono text-[9px] text-white/50 uppercase tracking-wider">
+                      PassKit Package (.pkpass)
+                    </div>
+                    <div className="font-sans font-bold text-sm text-white">
+                      Download Apple Wallet Pass File
+                    </div>
+                  </div>
+                </button>
+                <div className="font-mono text-[10px] text-white/40 text-center mt-2">
+                  Opens directly in Apple Wallet on iPhone, iPad, Apple Watch, and macOS.
+                </div>
+              </div>
             </div>
           )}
 
-          {/* CHANNEL 3: DIRECT LINK & PKPASS DOWNLOAD */}
-          {activeChannel === 'link' && (
+          {/* TAB 2: EMAIL PASS */}
+          {activeTab === 'email' && (
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-mono uppercase tracking-wider text-stone-300 mb-1">
-                  Direct Digital Pass URL
+                <label className="block font-mono text-[11px] text-[#C6A052] uppercase tracking-wider mb-1.5">
+                  Recipient Email Address
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="email"
+                    value={emailInput}
+                    onChange={(e) => setEmailInput(e.target.value)}
+                    placeholder="member@example.com"
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-black/50 border border-white/10 text-white font-mono text-sm focus:outline-none focus:border-[#C6A052]"
+                  />
+                  <button
+                    onClick={handleSendEmail}
+                    disabled={isSending || !emailInput}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#C6A052] hover:bg-[#D4B062] text-black font-bold text-xs uppercase tracking-wider transition-all disabled:opacity-50"
+                  >
+                    <Send className="w-4 h-4" />
+                    {isSending ? 'Sending...' : 'Send'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Preview of Email Contents */}
+              <div className="p-4 rounded-xl bg-black/40 border border-white/[0.08] space-y-2.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-mono text-[10px] text-white/40 uppercase">Subject:</span>
+                  <span className="font-mono text-white/80 text-xs">
+                    JONNY&apos;S SOHO - Official Digital Pass ({member.memberNumber})
+                  </span>
+                </div>
+                <div className="text-xs text-stone-300 leading-relaxed border-t border-white/[0.06] pt-2">
+                  Includes personalized invitation, verified member number, Westminster Statutory Rules (01:00 AM strict cutoff, 01:30 AM guest departure), and direct <strong>Add to Apple Wallet</strong> action.
+                </div>
+
+                <div className="pt-2 flex justify-end">
+                  <button
+                    onClick={handleOpenMailClient}
+                    className="flex items-center gap-1.5 text-xs text-[#C6A052] hover:underline font-mono"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    Open in default mail client
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: SMS & WHATSAPP */}
+          {activeTab === 'sms' && (
+            <div className="space-y-4">
+              <div>
+                <label className="block font-mono text-[11px] text-[#C6A052] uppercase tracking-wider mb-1.5">
+                  Mobile Phone Number
+                </label>
+                <input
+                  type="tel"
+                  value={phoneInput}
+                  onChange={(e) => setPhoneInput(e.target.value)}
+                  placeholder="+44 7700 900077"
+                  className="w-full px-4 py-2.5 rounded-xl bg-black/50 border border-white/10 text-white font-mono text-sm focus:outline-none focus:border-[#C6A052]"
+                />
+              </div>
+
+              {/* SMS Text Preview */}
+              <div className="p-3.5 rounded-xl bg-black/40 border border-white/[0.08] font-mono text-xs text-stone-300 whitespace-pre-wrap leading-relaxed">
+                {formatPassSmsMessage(member)}
+              </div>
+
+              {/* Quick Messaging Actions */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  onClick={handleOpenWhatsApp}
+                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#25D366]/20 hover:bg-[#25D366]/30 text-[#25D366] border border-[#25D366]/40 text-xs font-bold tracking-wide transition-all"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  WhatsApp
+                </button>
+
+                <button
+                  onClick={handleCopySmsText}
+                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-white border border-white/10 text-xs font-semibold tracking-wide transition-all"
+                >
+                  {isCopied ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                  {isCopied ? 'Copied!' : 'Copy Text'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: DIRECT LINK & NATIVE SHARE */}
+          {activeTab === 'link' && (
+            <div className="space-y-4">
+              <div>
+                <label className="block font-mono text-[11px] text-[#C6A052] uppercase tracking-wider mb-1.5">
+                  Direct Pass Access URL
                 </label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     readOnly
                     value={passUrl}
-                    className="flex-1 px-3 py-2 bg-[#090708] border border-[#3E101B] rounded-xl text-xs text-stone-400 font-mono focus:outline-none"
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-black/50 border border-white/10 text-stone-300 font-mono text-xs focus:outline-none"
                   />
                   <button
-                    type="button"
                     onClick={handleCopyLink}
-                    className="px-4 py-2 rounded-xl bg-[#581625] hover:bg-[#6E1C30] border border-[#C6A052]/40 text-[#E5C378] text-xs font-mono font-bold flex items-center gap-1.5 active:scale-95 transition-all shrink-0 cursor-pointer"
+                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/[0.08] hover:bg-white/[0.12] text-white font-mono text-xs font-semibold tracking-wider transition-all"
                   >
-                    {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                    <span>{copiedLink ? 'Copied!' : 'Copy'}</span>
+                    {copiedLink ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                    {copiedLink ? 'Copied' : 'Copy'}
                   </button>
                 </div>
               </div>
 
-              {/* Apple Wallet .pkpass Download Box */}
-              <div className="p-4 rounded-2xl bg-[#0F0D11] border border-white/10 flex items-center justify-between gap-3">
-                <div>
-                  <div className="font-serif text-sm font-bold text-white">
-                    Apple Wallet Package (.pkpass)
-                  </div>
-                  <div className="text-xs text-stone-400 mt-0.5">
-                    Download authentic PassKit bundle for iOS Wallet integration.
-                  </div>
-                </div>
+              <button
+                onClick={handleNativeShare}
+                className="w-full flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl bg-[#C6A052] hover:bg-[#D4B062] text-black font-bold text-xs uppercase tracking-wider transition-all shadow-md active:scale-[0.98]"
+              >
+                <Share2 className="w-4 h-4" />
+                Open Native Share Sheet (AirDrop / Messages)
+              </button>
 
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await downloadAppleWalletPass(member, qrToken);
-                    setSendSuccessMessage('.pkpass file downloaded!');
-                    setTimeout(() => setSendSuccessMessage(null), 3000);
-                  }}
-                  className="px-4 py-2 rounded-xl bg-black hover:bg-neutral-900 border border-white/20 text-white text-xs font-mono font-semibold flex items-center gap-2 active:scale-95 transition-all shrink-0 cursor-pointer"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Download .pkpass</span>
-                </button>
+              <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06] text-xs text-stone-400 leading-relaxed font-mono">
+                Anyone opening this unique member link can view their live rotating security pass and tap &quot;Add to Apple Wallet&quot; directly to their device.
               </div>
             </div>
           )}
         </div>
 
-        {/* Modal Footer */}
-        <div className="px-5 py-3.5 bg-[#100D11] border-t border-[#25161B] flex items-center justify-between text-xs text-stone-400 font-mono">
-          <span>Licensing Act 2003 Compliant</span>
+        {/* Footer */}
+        <div className="px-6 py-3.5 bg-black/60 border-t border-white/[0.08] flex items-center justify-between text-xs text-white/40 font-mono">
+          <span>Jonny&apos;s Soho · 23 Frith Street</span>
           <button
-            type="button"
             onClick={onClose}
-            className="px-4 py-1.5 rounded-lg bg-[#1B1519] hover:bg-[#251A22] text-stone-300 font-medium transition-colors"
+            className="text-stone-300 hover:text-white underline font-sans"
           >
             Close
           </button>

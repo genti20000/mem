@@ -73,6 +73,8 @@ export interface Member {
   revokedReason?: string;
   ruleAcceptance: RuleAcceptance;
   notes?: string;
+  guestAllowance?: number;
+  tier?: string;
 }
 
 export interface Guest {

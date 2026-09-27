@@ -526,7 +526,11 @@ export async function initDatabaseSync(): Promise<void> {
 
   try {
     // 1. Test connection to Firestore
-    await testConnection();
+    const isOnline = await testConnection();
+    if (!isOnline) {
+      console.log('[Firestore] App operating in offline/local-first mode. Will sync when backend is available.');
+      return;
+    }
 
     // 2. Seed initial cloud data if newly created collection
     await seedInitialFirestoreData({

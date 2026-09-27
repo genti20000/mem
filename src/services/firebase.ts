@@ -9,6 +9,7 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import {
   getFirestore,
+  initializeFirestore,
   doc,
   setDoc,
   getDoc,
@@ -24,13 +25,43 @@ import { Member, VisitRecord, IncidentRecord, AuditEvent } from '../types';
 // Initialize Firebase App
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Target provisioned Firestore Database
+// Database initialization per Firebase Skill specification
 export const db: Firestore = firebaseConfig.firestoreDatabaseId
   ? getFirestore(app, firebaseConfig.firestoreDatabaseId)
   : getFirestore(app);
 
 // Connection state
 let isConnected = false;
+
+export enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+export interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+  };
+}
+
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {},
+    operationType,
+    path,
+  };
+  console.warn('[Firestore Non-Fatal Notice]:', JSON.stringify(errInfo));
+}
 
 /**
  * Validate connection to Firestore on boot (Mandated by Firebase Skill)
@@ -41,9 +72,18 @@ export async function testConnection(): Promise<boolean> {
     isConnected = true;
     console.log('[Firestore] Database connected successfully:', firebaseConfig.firestoreDatabaseId);
     return true;
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.warn('[Firestore] Please check your Firebase configuration: client is offline');
+  } catch (error: unknown) {
+    const err = error as { code?: string; message?: string };
+    const errMsg = err?.message || '';
+    const errCode = err?.code || '';
+
+    if (
+      errMsg.includes('the client is offline') ||
+      errMsg.toLowerCase().includes('offline') ||
+      errCode === 'unavailable' ||
+      errCode === 'failed-precondition'
+    ) {
+      console.warn('[Firestore] Operating in offline mode. Client will sync when connection is restored.');
       isConnected = false;
       return false;
     }
@@ -141,7 +181,9 @@ export function setupFirestoreRealtimeListeners(callbacks: {
           callbacks.onMembersUpdate?.(membersList);
         }
       }, (err) => {
-        console.warn('[Firestore] Members sync error:', err.message);
+        if (err.code !== 'unavailable') {
+          console.warn('[Firestore] Members sync error:', err.message);
+        }
       });
       unsubscribes.push(unsub);
     }
@@ -159,7 +201,9 @@ export function setupFirestoreRealtimeListeners(callbacks: {
           callbacks.onVisitsUpdate?.(visitsList);
         }
       }, (err) => {
-        console.warn('[Firestore] Visits sync error:', err.message);
+        if (err.code !== 'unavailable') {
+          console.warn('[Firestore] Visits sync error:', err.message);
+        }
       });
       unsubscribes.push(unsub);
     }
@@ -177,7 +221,9 @@ export function setupFirestoreRealtimeListeners(callbacks: {
           callbacks.onIncidentsUpdate?.(incidentsList);
         }
       }, (err) => {
-        console.warn('[Firestore] Incidents sync error:', err.message);
+        if (err.code !== 'unavailable') {
+          console.warn('[Firestore] Incidents sync error:', err.message);
+        }
       });
       unsubscribes.push(unsub);
     }

@@ -15,10 +15,12 @@ import {
   ArrowUpRight,
   TrendingUp,
   Sparkles,
+  Camera,
 } from 'lucide-react';
 import { Member, StaffUser, ClubRuleVersion, AuditEvent } from '../../types';
 import { clubStore } from '../../services/storage';
 import { validate48HourWaitingPeriod } from '../../services/ruleEngine';
+import { PhotoCaptureModal } from '../common/PhotoCapture';
 
 interface ManagementDashboardProps {
   currentStaff: StaffUser;
@@ -50,6 +52,10 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
   // Reject Application Modal
   const [rejectTargetMember, setRejectTargetMember] = useState<Member | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+
+  // Photo Capture Modal for Applications and Members
+  const [photoTargetMember, setPhotoTargetMember] = useState<Member | null>(null);
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
 
   // Error / Warning Message
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -388,54 +394,82 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
                     key={app.id}
                     className="p-5 rounded-2xl bg-[#120F11] border border-[#2B0A13] flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-lg"
                   >
-                    <div className="space-y-1.5 max-w-xl">
-                      <div className="flex items-center gap-2">
-                        <span className="font-serif text-lg font-bold text-stone-100">
-                          {app.fullName}
-                        </span>
-                        <span className="font-mono text-xs text-[#C6A052]">
-                          ({app.memberNumber})
-                        </span>
-                        <span
-                          className={`text-[9px] font-mono uppercase px-2 py-0.5 rounded border ${
-                            isEligibleForApproval
-                              ? 'bg-blue-950/40 border-blue-500/50 text-blue-300'
-                              : 'bg-amber-950/40 border-amber-500/50 text-amber-300'
-                          }`}
+                    <div className="flex items-start gap-3.5 max-w-xl">
+                      {/* Photo Thumbnail with Add/Take Photo Trigger */}
+                      <div className="relative group shrink-0">
+                        <div className="w-14 h-14 rounded-xl overflow-hidden border border-[#C6A052]/50 bg-black/40 shadow-inner flex items-center justify-center">
+                          {app.photoUrl ? (
+                            <img src={app.photoUrl} alt={app.fullName} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center text-stone-600 bg-[#161013]">
+                              <Camera className="w-4 h-4 text-stone-500" />
+                              <span className="text-[7px] font-mono text-stone-500">NO PHOTO</span>
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPhotoTargetMember(app);
+                            setShowPhotoModal(true);
+                          }}
+                          className="mt-1 w-full text-[9px] font-mono py-0.5 px-1 rounded bg-[#2A0C14] hover:bg-[#3E101B] border border-[#C6A052]/40 text-[#E5C378] text-center flex items-center justify-center gap-1"
+                          title="Add photo or take new"
                         >
-                          {isEligibleForApproval
-                            ? 'Ready for Manager Approval'
-                            : 'In 48h Waiting Period'}
-                        </span>
+                          <Camera className="w-2.5 h-2.5" />
+                          <span>{app.photoUrl ? 'Retake' : '+ Photo'}</span>
+                        </button>
                       </div>
 
-                      <div className="text-xs text-stone-300">
-                        <strong>{app.hospitalityRole}</strong> at <strong>{app.employer}</strong>
-                      </div>
-
-                      <div className="text-[11px] text-stone-400">
-                        {app.employerAddressOrWebsite}
-                      </div>
-
-                      {app.employmentEvidenceNote && (
-                        <div className="p-2 rounded-lg bg-[#0B090A] border border-[#200A11] text-[11px] text-stone-300">
-                          <strong className="text-[#C6A052]">Evidence:</strong> {app.employmentEvidenceNote}
+                      <div className="space-y-1.5 flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-serif text-lg font-bold text-stone-100">
+                            {app.fullName}
+                          </span>
+                          <span className="font-mono text-xs text-[#C6A052]">
+                            ({app.memberNumber})
+                          </span>
+                          <span
+                            className={`text-[9px] font-mono uppercase px-2 py-0.5 rounded border ${
+                              isEligibleForApproval
+                                ? 'bg-blue-950/40 border-blue-500/50 text-blue-300'
+                                : 'bg-amber-950/40 border-amber-500/50 text-amber-300'
+                            }`}
+                          >
+                            {isEligibleForApproval
+                              ? 'Ready for Manager Approval'
+                              : 'In 48h Waiting Period'}
+                          </span>
                         </div>
-                      )}
 
-                      <div className="text-[10px] font-mono text-stone-400 flex items-center gap-2 pt-1">
-                        <span>Applied: {new Date(app.appliedAt).toLocaleString('en-GB')}</span>
-                        <span>·</span>
-                        <span>Accepted Rules: v{app.ruleAcceptance.ruleVersion}</span>
-                      </div>
-
-                      {/* Remaining countdown banner if still waiting */}
-                      {!isEligibleForApproval && (
-                        <div className="text-xs text-amber-400/90 font-mono flex items-center gap-1.5 pt-1">
-                          <Clock className="w-3.5 h-3.5" />
-                          <span>{waitCheck.reason}</span>
+                        <div className="text-xs text-stone-300">
+                          <strong>{app.hospitalityRole}</strong> at <strong>{app.employer}</strong>
                         </div>
-                      )}
+
+                        <div className="text-[11px] text-stone-400">
+                          {app.employerAddressOrWebsite}
+                        </div>
+
+                        {app.employmentEvidenceNote && (
+                          <div className="p-2 rounded-lg bg-[#0B090A] border border-[#200A11] text-[11px] text-stone-300">
+                            <strong className="text-[#C6A052]">Evidence:</strong> {app.employmentEvidenceNote}
+                          </div>
+                        )}
+
+                        <div className="text-[10px] font-mono text-stone-400 flex items-center gap-2 pt-1">
+                          <span>Applied: {new Date(app.appliedAt).toLocaleString('en-GB')}</span>
+                          <span>·</span>
+                          <span>Accepted Rules: v{app.ruleAcceptance.ruleVersion}</span>
+                        </div>
+
+                        {/* Remaining countdown banner if still waiting */}
+                        {!isEligibleForApproval && (
+                          <div className="text-xs text-amber-400/90 font-mono flex items-center gap-1.5 pt-1">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span>{waitCheck.reason}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     {/* Actions */}
@@ -473,6 +507,18 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
 
                       <button
                         onClick={() => {
+                          setPhotoTargetMember(app);
+                          setShowPhotoModal(true);
+                        }}
+                        className="w-full sm:w-auto px-3 py-2 rounded-xl bg-[#201518] hover:bg-[#311C23] border border-[#C6A052]/40 text-[#E5C378] text-xs font-mono flex items-center justify-center gap-1.5"
+                        title="Add photo or take new with device camera"
+                      >
+                        <Camera className="w-3.5 h-3.5 text-[#E5C378]" />
+                        <span>Photo</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
                           setActionMember(app);
                           setActionType('info');
                         }}
@@ -503,16 +549,39 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-[#240D16] text-stone-400 font-mono uppercase text-[10px]">
+                <th className="pb-3 w-12">Photo</th>
                 <th className="pb-3">Member</th>
                 <th className="pb-3">Trade Role & Employer</th>
                 <th className="pb-3">Rules Accepted</th>
                 <th className="pb-3">Status</th>
-                <th className="pb-3 text-right">Disciplinary Actions</th>
+                <th className="pb-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#1D0C13]">
               {members.map((m) => (
                 <tr key={m.id} className="hover:bg-[#181316]/50 transition-colors">
+                  <td className="py-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPhotoTargetMember(m);
+                        setShowPhotoModal(true);
+                      }}
+                      className="relative group w-10 h-10 rounded-lg overflow-hidden border border-[#C6A052]/40 bg-black block cursor-pointer"
+                      title="Update member photo (Add or Take New)"
+                    >
+                      {m.photoUrl ? (
+                        <img src={m.photoUrl} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-stone-500 bg-[#161013]">
+                          <Camera className="w-4 h-4" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[#E5C378] transition-opacity">
+                        <Camera className="w-3.5 h-3.5" />
+                      </div>
+                    </button>
+                  </td>
                   <td className="py-3 font-medium text-stone-200">
                     <div className="text-sm font-serif font-bold text-stone-100">
                       {m.fullName}
@@ -545,6 +614,18 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
                   </td>
                   <td className="py-3 text-right">
                     <div className="flex items-center justify-end gap-1.5">
+                      <button
+                        onClick={() => {
+                          setPhotoTargetMember(m);
+                          setShowPhotoModal(true);
+                        }}
+                        className="px-2 py-1 text-[11px] rounded bg-[#201518] hover:bg-[#311C23] border border-[#C6A052]/30 text-[#E5C378] font-mono flex items-center gap-1"
+                        title="Update member photo (Add or Take New)"
+                      >
+                        <Camera className="w-3 h-3 text-[#E5C378]" />
+                        <span>Photo</span>
+                      </button>
+
                       {m.status === 'suspended' ? (
                         <button
                           onClick={() => {
@@ -924,6 +1005,21 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
             </form>
           </div>
         </div>
+      )}
+
+      {/* Photo Capture Modal (Take New or Add Photo) for Applications and Members */}
+      {photoTargetMember && (
+        <PhotoCaptureModal
+          isOpen={showPhotoModal}
+          onClose={() => {
+            setShowPhotoModal(false);
+            setPhotoTargetMember(null);
+          }}
+          member={photoTargetMember}
+          onPhotoUpdated={(updated) => {
+            setPhotoTargetMember(updated);
+          }}
+        />
       )}
     </div>
   );

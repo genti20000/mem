@@ -12,27 +12,15 @@ import {
   CheckCircle2,
   XCircle,
   AlertTriangle,
-  User,
-  Users,
   ChevronDown,
   X,
   Sparkles,
-  Maximize2,
-  Minimize2,
   Check,
-  ShieldCheck,
-  Clock,
+  ExternalLink,
 } from 'lucide-react';
 import { Member, StaffUser } from '../../types';
 import { clubStore } from '../../services/storage';
-import { parseMemberFromQRToken, verifyMemberToken } from '../../services/security';
-import {
-  validateAdmission,
-  validateMemberStatus,
-  validate48HourWaitingPeriod,
-  MAX_CUSTOMER_CAPACITY,
-  MAX_GUESTS_PER_MEMBER_LATE_NIGHT,
-} from '../../services/ruleEngine';
+import { parseMemberFromQRToken } from '../../services/security';
 
 export interface UniversalCameraScannerProps {
   mode?: 'modal' | 'inline';
@@ -45,10 +33,12 @@ export interface UniversalCameraScannerProps {
   onAdmitDirectly?: (member: Member) => void;
 }
 
-// Play luxury tone for door feedback
+// Play luxury chime for door feedback
 function playAudioFeedback(success: boolean) {
   try {
-    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const AudioCtx =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!AudioCtx) return;
     const ctx = new AudioCtx();
     if (ctx.state === 'suspended') {
@@ -97,20 +87,38 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Preserve callbacks in refs to avoid re-triggering effects
+  const onMemberScannedRef = useRef(onMemberScanned);
+  onMemberScannedRef.current = onMemberScanned;
+
+  const onAdmitDirectlyRef = useRef(onAdmitDirectly);
+  onAdmitDirectlyRef.current = onAdmitDirectly;
+
   // Video devices & orientation
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>('');
-  const [facingMode, setFacingMode] = useState<'user' | 'environment'>(mode === 'inline' ? 'user' : 'environment');
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>(
+    mode === 'inline' ? 'user' : 'environment'
+  );
 
   // Controls & States
   const [hasTorch, setHasTorch] = useState<boolean>(false);
   const [torchOn, setTorchOn] = useState<boolean>(false);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
-  const [cameraState, setCameraState] = useState<'idle' | 'requesting' | 'active' | 'denied' | 'unsupported'>('idle');
+  const soundEnabledRef = useRef(soundEnabled);
+  soundEnabledRef.current = soundEnabled;
+
+  const [cameraState, setCameraState] = useState<
+    'idle' | 'requesting' | 'active' | 'denied' | 'unsupported'
+  >('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isIframeSandbox, setIsIframeSandbox] = useState<boolean>(false);
 
   // Scan detection & result
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const isProcessingRef = useRef(isProcessing);
+  isProcessingRef.current = isProcessing;
+
   const [scanFlash, setScanFlash] = useState<'success' | 'failure' | null>(null);
   const [scannedResult, setScannedResult] = useState<{
     member: Member | null;
@@ -123,6 +131,17 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
   const [manualQuery, setManualQuery] = useState('');
   const [manualError, setManualError] = useState<string | null>(null);
   const [showDeviceDropdown, setShowDeviceDropdown] = useState(false);
+
+  // Detect iframe sandbox on mount
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined' && window.self !== window.top) {
+        setIsIframeSandbox(true);
+      }
+    } catch {
+      setIsIframeSandbox(true);
+    }
+  }, []);
 
   // Stop media stream tracks cleanly
   const stopStream = useCallback(() => {
@@ -140,111 +159,116 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
       });
       mediaStreamRef.current = null;
     }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
     setTorchOn(false);
   }, []);
 
-  // Enumerate cameras available on this device
-  const refreshDevices = useCallback(async () => {
+  // Enumerate cameras available on this device - safely guarded against re-render loops
+  const enumerateVideoDevices = useCallback(async () => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
       return;
     }
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
       const videoInputs = devices.filter((d) => d.kind === 'videoinput');
-      setVideoDevices(videoInputs);
+      setVideoDevices((prev) => {
+        // Compare previous device IDs to avoid useless re-renders
+        const prevIds = prev.map((d) => d.deviceId).join(',');
+        const newIds = videoInputs.map((d) => d.deviceId).join(',');
+        if (prevIds === newIds) return prev;
+        return videoInputs;
+      });
     } catch (err) {
       console.warn('enumerateDevices error:', err);
     }
   }, []);
 
   // Process decoded QR text string
-  const handleDecodedText = useCallback(
-    (rawText: string) => {
-      if (isProcessing) return;
-      setIsProcessing(true);
+  const handleDecodedText = useCallback((rawText: string) => {
+    if (isProcessingRef.current) return;
+    setIsProcessing(true);
 
-      const trimmed = rawText.trim();
-      const members = clubStore.getMembers();
-      const tokenResult = parseMemberFromQRToken(trimmed, members);
+    const trimmed = rawText.trim();
+    const members = clubStore.getMembers();
+    const tokenResult = parseMemberFromQRToken(trimmed, members);
 
-      let memberMatch: Member | null = null;
-      let isValid = false;
-      let reason = '';
+    let memberMatch: Member | null = null;
+    let isValid = false;
+    let reason = '';
 
-      if (tokenResult.valid && tokenResult.member) {
-        const found = tokenResult.member as Member;
-        memberMatch = found;
-        if (found.status === 'active') {
+    if (tokenResult.valid && tokenResult.member) {
+      const found = tokenResult.member as Member;
+      memberMatch = found;
+      if (found.status === 'active') {
+        isValid = true;
+      } else if (found.status === 'waiting_48_hours') {
+        isValid = false;
+        reason = 'Mandatory 48-hour statutory waiting period is still active.';
+      } else if (found.status === 'suspended') {
+        isValid = false;
+        reason = 'Membership privileges currently suspended by management.';
+      } else {
+        isValid = false;
+        reason = `Membership status is "${found.status.toUpperCase()}".`;
+      }
+    } else {
+      // Fallback: direct match on memberNumber or id
+      const direct = members.find(
+        (m) =>
+          m.id.toLowerCase() === trimmed.toLowerCase() ||
+          m.memberNumber.toLowerCase() === trimmed.toLowerCase()
+      );
+      if (direct) {
+        memberMatch = direct;
+        if (direct.status === 'active') {
           isValid = true;
-        } else if (found.status === 'waiting_48_hours') {
-          isValid = false;
-          reason = 'Mandatory 48-hour statutory waiting period is still active.';
-        } else if (found.status === 'suspended') {
-          isValid = false;
-          reason = 'Membership privileges currently suspended by management.';
         } else {
           isValid = false;
-          reason = `Membership status is "${found.status.toUpperCase()}".`;
+          reason = `Member status is "${direct.status.toUpperCase()}".`;
         }
       } else {
-        // Fallback: direct match on memberNumber or id
-        const direct = members.find(
-          (m) =>
-            m.id.toLowerCase() === trimmed.toLowerCase() ||
-            m.memberNumber.toLowerCase() === trimmed.toLowerCase()
-        );
-        if (direct) {
-          memberMatch = direct;
-          if (direct.status === 'active') {
-            isValid = true;
-          } else {
-            isValid = false;
-            reason = `Member status is "${direct.status.toUpperCase()}".`;
-          }
-        } else {
-          isValid = false;
-          reason = tokenResult.error || 'Unrecognized QR token or member not found in register.';
-        }
+        isValid = false;
+        reason = tokenResult.error || 'Unrecognized QR token or member not found in register.';
       }
+    }
 
-      // Feedback
-      setScanFlash(isValid ? 'success' : 'failure');
-      if (soundEnabled) {
-        playAudioFeedback(isValid);
+    // Audio & Haptic Feedback
+    setScanFlash(isValid ? 'success' : 'failure');
+    if (soundEnabledRef.current) {
+      playAudioFeedback(isValid);
+    }
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      try {
+        navigator.vibrate(isValid ? [60, 40, 60] : [180, 80, 180]);
+      } catch {
+        // ignore
       }
-      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-        try {
-          navigator.vibrate(isValid ? [60, 40, 60] : [180, 80, 180]);
-        } catch {
-          // ignore
-        }
-      }
+    }
 
-      setScannedResult({
-        member: memberMatch,
-        rawText: trimmed,
-        isValid,
-        reason,
-      });
+    setScannedResult({
+      member: memberMatch,
+      rawText: trimmed,
+      isValid,
+      reason,
+    });
 
-      if (isValid && memberMatch) {
-        // Notify parent callback
-        onMemberScanned(memberMatch);
-        setTimeout(() => {
-          setScanFlash(null);
-          setIsProcessing(false);
-        }, 1200);
-      } else {
-        setTimeout(() => {
-          setScanFlash(null);
-          setIsProcessing(false);
-        }, 1500);
-      }
-    },
-    [isProcessing, soundEnabled, onMemberScanned]
-  );
+    if (isValid && memberMatch) {
+      onMemberScannedRef.current(memberMatch);
+      setTimeout(() => {
+        setScanFlash(null);
+        setIsProcessing(false);
+      }, 1200);
+    } else {
+      setTimeout(() => {
+        setScanFlash(null);
+        setIsProcessing(false);
+      }, 1500);
+    }
+  }, []);
 
-  // Start Video Stream with progressive fallback
+  // Start Camera Function: explicit, guarded, no auto-loop
   const startCamera = useCallback(async () => {
     stopStream();
     setCameraState('requesting');
@@ -256,7 +280,7 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
       return;
     }
 
-    // Stage 1: Try deviceId if selected, else facingMode
+    // Build constraints
     const buildConstraints = (strict = false): MediaStreamConstraints => {
       if (selectedDeviceId) {
         return {
@@ -290,15 +314,21 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
           // Stage 3: Absolute universal fallback - ANY camera stream available
           stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
         } catch (errFinal: unknown) {
-          console.error('All camera attempts failed:', errFinal);
+          console.warn('Camera access unavailable:', errFinal);
           setCameraState('denied');
           const err = errFinal as Error;
-          if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-            setErrorMessage('Camera permission was denied. Please allow camera access in browser settings.');
+          if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError' || err.name === 'SecurityError') {
+            setErrorMessage(
+              isIframeSandbox
+                ? 'Camera access was blocked by the embedded browser sandbox. Click "Open in Standalone Tab" or use file upload / simulation tokens.'
+                : 'Camera permission was denied. Please allow camera access in browser settings.'
+            );
           } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
             setErrorMessage('No camera device detected on this hardware.');
           } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-            setErrorMessage('Camera is currently in use by another application or tab.');
+            setErrorMessage(
+              'Camera hardware is locked by another window or component (Dual Camera Resource Lock). Close other camera feeds and click Retry.'
+            );
           } else {
             setErrorMessage(err.message || 'Unable to access camera.');
           }
@@ -334,14 +364,16 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
         console.warn('Video play() interrupted:', playErr);
       }
       setCameraState('active');
-      refreshDevices();
+
+      // Safely enumerate available devices now that camera permission is granted
+      enumerateVideoDevices();
 
       // Start continuous scanning loop via jsQR
       let lastScanTime = 0;
       const scanLoop = (timestamp: number) => {
         if (!videoRef.current || !canvasRef.current) return;
 
-        // Throttle scanning to ~15fps for optimal battery life while maintaining instant response
+        // Throttle scanning to ~15fps for optimal performance
         if (timestamp - lastScanTime >= 65) {
           lastScanTime = timestamp;
           const video = videoRef.current;
@@ -369,7 +401,23 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
 
       animationFrameId.current = requestAnimationFrame(scanLoop);
     }
-  }, [facingMode, selectedDeviceId, stopStream, refreshDevices, handleDecodedText]);
+  }, [facingMode, selectedDeviceId, stopStream, enumerateVideoDevices, handleDecodedText, isIframeSandbox]);
+
+  // Main lifecycle: ONLY re-run when isOpen, selectedDeviceId, or facingMode changes!
+  useEffect(() => {
+    let isCancelled = false;
+
+    if (isOpen) {
+      startCamera();
+    } else {
+      stopStream();
+    }
+
+    return () => {
+      isCancelled = true;
+      stopStream();
+    };
+  }, [isOpen, selectedDeviceId, facingMode]); // Explicit dependencies only!
 
   // Handle Photo / File snapshot scanning fallback
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -395,15 +443,14 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
           } else {
             setErrorMessage('No readable QR code found in the selected photo.');
             setScanFlash('failure');
-            if (soundEnabled) playAudioFeedback(false);
-            setTimeout(() => setScanFlash(null), 1200);
+            if (soundEnabledRef.current) playAudioFeedback(false);
+            setTimeout(() => setScanFlash(null), 1500);
           }
         }
       };
       img.src = event.target?.result as string;
     };
     reader.readAsDataURL(file);
-    // Reset file input so same file can be re-selected if desired
     e.target.value = '';
   };
 
@@ -457,22 +504,10 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
     } else {
       setManualError(`No registered member found for "${manualQuery}".`);
       setScanFlash('failure');
-      if (soundEnabled) playAudioFeedback(false);
+      if (soundEnabledRef.current) playAudioFeedback(false);
       setTimeout(() => setScanFlash(null), 1200);
     }
   };
-
-  // Lifecycle
-  useEffect(() => {
-    if (isOpen) {
-      startCamera();
-    } else {
-      stopStream();
-    }
-    return () => {
-      stopStream();
-    };
-  }, [isOpen, startCamera, stopStream]);
 
   if (mode === 'modal' && !isOpen) return null;
 
@@ -485,7 +520,6 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
         ref={fileInputRef}
         type="file"
         accept="image/*"
-        capture="environment"
         onChange={handleFileUpload}
         className="hidden"
       />
@@ -577,7 +611,7 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             className="p-2 sm:p-2.5 rounded-xl bg-black/60 hover:bg-black/90 border border-white/10 text-stone-200 active:scale-95 transition-all backdrop-blur-md"
-            title="Scan Photo or Native Camera Capture"
+            title="Upload QR Image"
           >
             <Upload className="w-4 h-4" />
           </button>
@@ -589,7 +623,11 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
             className="p-2 sm:p-2.5 rounded-xl bg-black/60 hover:bg-black/90 border border-white/10 text-stone-300 active:scale-95 transition-all backdrop-blur-md"
             title={soundEnabled ? 'Mute Chime' : 'Enable Chime'}
           >
-            {soundEnabled ? <Volume2 className="w-4 h-4 text-emerald-400" /> : <VolumeX className="w-4 h-4 text-stone-500" />}
+            {soundEnabled ? (
+              <Volume2 className="w-4 h-4 text-emerald-400" />
+            ) : (
+              <VolumeX className="w-4 h-4 text-stone-500" />
+            )}
           </button>
 
           {/* Close modal if in modal mode */}
@@ -643,19 +681,33 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
           </div>
         )}
 
-        {/* Denied / Unsupported Camera State with 1-Tap Fallback */}
+        {/* Denied / Unsupported Camera State with Fallback Options */}
         {(cameraState === 'denied' || cameraState === 'unsupported') && (
-          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-[#100C0E] p-6 text-center">
-            <div className="w-12 h-12 rounded-2xl bg-rose-950/70 border border-rose-600/60 flex items-center justify-center text-rose-400 mb-3">
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-[#100C0E]/95 p-6 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-rose-950/70 border border-rose-600/60 flex items-center justify-center text-rose-400 mb-3 shadow-lg">
               <AlertTriangle className="w-6 h-6" />
             </div>
             <h3 className="font-serif text-lg font-bold text-rose-300">
               Camera Access Unavailable
             </h3>
-            <p className="text-xs text-stone-400 mt-1 mb-4 max-w-sm">
-              {errorMessage || 'Camera could not be started. You can snap a photo directly using the device camera app or choose from files below.'}
+            <p className="text-xs text-stone-300 mt-1 mb-4 max-w-md leading-relaxed">
+              {errorMessage || 'Camera could not be started.'}
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-2">
+
+            <div className="flex flex-wrap items-center justify-center gap-2.5 max-w-md">
+              {/* Standalone Tab Button for AI Studio iframe */}
+              {isIframeSandbox && (
+                <a
+                  href={typeof window !== 'undefined' ? window.location.href : '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#581625] to-[#3E101B] hover:from-[#721C31] hover:to-[#501524] border border-[#C6A052]/60 text-[#E5C378] font-mono text-xs font-bold transition-all shadow-md active:scale-95"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Open in Standalone Tab</span>
+                </a>
+              )}
+
               <button
                 type="button"
                 onClick={startCamera}
@@ -664,13 +716,14 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
                 <RefreshCw className="w-3.5 h-3.5" />
                 <span>Retry Permission</span>
               </button>
+
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#C6A052] hover:bg-[#D4B063] text-black font-semibold text-xs font-mono transition-colors active:scale-95"
               >
-                <Camera className="w-3.5 h-3.5" />
-                <span>Snap Photo with Camera App</span>
+                <Upload className="w-3.5 h-3.5" />
+                <span>Upload QR Image</span>
               </button>
             </div>
           </div>
@@ -771,12 +824,12 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
                   </div>
                 </div>
 
-                {onAdmitDirectly && (
+                {onAdmitDirectlyRef.current && (
                   <button
                     type="button"
                     onClick={() => {
-                      if (scannedResult.member) {
-                        onAdmitDirectly(scannedResult.member);
+                      if (scannedResult.member && onAdmitDirectlyRef.current) {
+                        onAdmitDirectlyRef.current(scannedResult.member);
                       }
                       if (mode === 'modal' && onClose) {
                         onClose();
@@ -850,7 +903,7 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
             <button
               type="button"
               onClick={() => handleDecodedText('JNY-0842')}
-              className="p-2 rounded-xl bg-[#191316] hover:bg-[#251820] border border-emerald-500/40 text-left active:scale-95 transition-all"
+              className="p-2 rounded-xl bg-[#191316] hover:bg-[#251820] border border-emerald-500/40 text-left active:scale-95 transition-all cursor-pointer"
             >
               <div className="text-[11px] font-serif font-bold text-emerald-300 truncate">
                 Marcus Sterling
@@ -860,7 +913,7 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
             <button
               type="button"
               onClick={() => handleDecodedText('JNY-1029')}
-              className="p-2 rounded-xl bg-[#191316] hover:bg-[#251820] border border-amber-500/40 text-left active:scale-95 transition-all"
+              className="p-2 rounded-xl bg-[#191316] hover:bg-[#251820] border border-amber-500/40 text-left active:scale-95 transition-all cursor-pointer"
             >
               <div className="text-[11px] font-serif font-bold text-amber-300 truncate">
                 Liam O&apos;Connor
@@ -870,7 +923,7 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
             <button
               type="button"
               onClick={() => handleDecodedText('JNY-0914')}
-              className="p-2 rounded-xl bg-[#191316] hover:bg-[#251820] border border-rose-500/40 text-left active:scale-95 transition-all"
+              className="p-2 rounded-xl bg-[#191316] hover:bg-[#251820] border border-rose-500/40 text-left active:scale-95 transition-all cursor-pointer"
             >
               <div className="text-[11px] font-serif font-bold text-rose-300 truncate">
                 Sophia Chen
@@ -894,7 +947,7 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
 
   // If modal (popped up from Scan Badge button), wrap in backdrop
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-3 sm:p-5 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-3 sm:p-5 overflow-y-auto animate-fadeIn">
       <div className="w-full max-w-xl rounded-2xl bg-[#120F12] border-2 border-[#581625] shadow-2xl overflow-hidden flex flex-col my-auto max-h-[92vh]">
         {scannerBody}
       </div>

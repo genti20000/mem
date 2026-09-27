@@ -456,20 +456,34 @@ export const DoorReceptionView: React.FC<DoorReceptionViewProps> = ({
           <div className="rounded-2xl overflow-hidden border border-white/[0.08] bg-[#0A0A0C] min-h-[300px] flex flex-col">
             {isKioskScannerActive ? (
               <div className="relative w-full aspect-[16/10] min-h-[320px]">
-                <UniversalCameraScanner
-                  mode="inline"
-                  isOpen={isKioskScannerActive}
-                  onClose={() => setIsKioskScannerActive(false)}
-                  onMemberScanned={(member) => {
-                    handleSelectMember(member);
-                  }}
-                  onAdmitDirectly={(member) => {
-                    handleCheckInMember(member);
-                  }}
-                  currentStaff={currentStaff}
-                  currentCustomerCount={stats.totalCustomers}
-                  venueDate={currentDate}
-                />
+                {showScannerModal ? (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#09080A] text-center p-6 space-y-2">
+                    <div className="w-10 h-10 rounded-full border border-[#C6A052]/40 bg-[#1A1215] flex items-center justify-center text-[#E5C378]">
+                      <Camera className="w-5 h-5" />
+                    </div>
+                    <div className="text-xs font-mono uppercase text-[#E5C378]">
+                      Camera Feed Active in Handheld Scanner
+                    </div>
+                    <div className="text-[11px] text-stone-400 max-w-xs">
+                      Single-camera hardware lock prevented. Kiosk stream will resume when modal closes.
+                    </div>
+                  </div>
+                ) : (
+                  <UniversalCameraScanner
+                    mode="inline"
+                    isOpen={isKioskScannerActive && !showScannerModal}
+                    onClose={() => setIsKioskScannerActive(false)}
+                    onMemberScanned={(member) => {
+                      handleSelectMember(member);
+                    }}
+                    onAdmitDirectly={(member) => {
+                      handleCheckInMember(member);
+                    }}
+                    currentStaff={currentStaff}
+                    currentCustomerCount={stats.totalCustomers}
+                    venueDate={currentDate}
+                  />
+                )}
               </div>
             ) : (
               <div className="p-8 sm:p-12 flex flex-col items-center justify-center text-center space-y-4 my-auto">

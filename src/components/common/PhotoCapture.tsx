@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Camera, Upload, X, Check, RefreshCw, AlertCircle, Image as ImageIcon, Trash2 } from 'lucide-react';
 import { Member } from '../../types';
 import { clubStore } from '../../services/storage';
@@ -24,6 +24,22 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Guarantee all video tracks are stopped on unmount
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => {
+          try {
+            track.stop();
+          } catch {
+            // ignore
+          }
+        });
+        streamRef.current = null;
+      }
+    };
+  }, []);
 
   const startCamera = async (mode: 'user' | 'environment' = facingMode) => {
     setCameraError(null);
@@ -61,10 +77,17 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
     } catch (err: unknown) {
       console.error('Camera access error:', err);
       const errName = (err as Error)?.name || '';
-      if (errName === 'NotAllowedError' || errName === 'PermissionDeniedError') {
-        setCameraError('Camera permission was denied. Please allow camera access in your browser settings.');
+      const inIframe = typeof window !== 'undefined' && window.self !== window.top;
+      if (errName === 'NotAllowedError' || errName === 'PermissionDeniedError' || errName === 'SecurityError') {
+        setCameraError(
+          inIframe
+            ? 'Camera was blocked by the embedded browser sandbox. Use "Add Photo" to upload an image, or open the app in a standalone tab.'
+            : 'Camera permission was denied. Please allow camera access in your browser settings.'
+        );
       } else if (errName === 'NotFoundError' || errName === 'DevicesNotFoundError') {
         setCameraError('No camera found on this device. You can use "Add Photo" to upload an image.');
+      } else if (errName === 'NotReadableError' || errName === 'TrackStartError') {
+        setCameraError('Camera hardware is locked by another window or component. Close other feeds or use "Add Photo".');
       } else {
         setCameraError('Could not start camera feed. Please check permissions or upload an image file.');
       }

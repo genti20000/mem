@@ -43,6 +43,8 @@ export const MembershipApplicationFlow: React.FC = () => {
   const [employerWebsiteOrAddress, setEmployerWebsiteOrAddress] = useState('');
   const [employmentEvidenceNote, setEmploymentEvidenceNote] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
+  const [faceDescriptor, setFaceDescriptor] = useState<number[] | undefined>(undefined);
+  const [expressFacialConsent, setExpressFacialConsent] = useState<boolean>(true);
   const [agreeToRules, setAgreeToRules] = useState(false);
   const [privacyConsent, setPrivacyConsent] = useState(false);
 
@@ -126,6 +128,9 @@ export const MembershipApplicationFlow: React.FC = () => {
       employerAddressOrWebsite: employerWebsiteOrAddress.trim(),
       employmentEvidenceNote: employmentEvidenceNote.trim() || undefined,
       photoUrl: photoUrl.trim() || '/src/assets/images/sample_member_photo_1790393794509.jpg',
+      faceDescriptor,
+      expressFacialConsent,
+      expressFacialConsentTimestamp: expressFacialConsent ? new Date().toISOString() : undefined,
       status: isBackdated ? 'active' : 'waiting_48_hours',
       appliedAt: appliedAtIso,
       eligibleAt: eligibleAtIso,
@@ -148,13 +153,21 @@ export const MembershipApplicationFlow: React.FC = () => {
   };
 
   // Update photo on an existing/old application
-  const handleUpdateExistingPhoto = (memberId: string, newPhotoUrl: string) => {
+  const handleUpdateExistingPhoto = (
+    memberId: string,
+    newPhotoUrl: string,
+    newDescriptor?: number[],
+    newConsent?: boolean
+  ) => {
     const target = allMembers.find((m) => m.id === memberId);
     if (!target) return;
 
     const updated: Member = {
       ...target,
       photoUrl: newPhotoUrl.trim() || '/src/assets/images/sample_member_photo_1790393794509.jpg',
+      faceDescriptor: newDescriptor || target.faceDescriptor,
+      expressFacialConsent: newConsent !== undefined ? newConsent : target.expressFacialConsent,
+      expressFacialConsentTimestamp: newConsent ? new Date().toISOString() : target.expressFacialConsentTimestamp,
     };
 
     clubStore.saveMember(
@@ -747,8 +760,14 @@ export const MembershipApplicationFlow: React.FC = () => {
             <div>
               <PhotoCapture
                 currentPhotoUrl={photoUrl}
-                onPhotoCaptured={setPhotoUrl}
-                label="Member Profile Photo (Add Photo or Take New)"
+                currentFaceDescriptor={faceDescriptor}
+                currentExpressConsent={expressFacialConsent}
+                onPhotoCaptured={(newUrl, descriptor, consent) => {
+                  setPhotoUrl(newUrl);
+                  if (descriptor) setFaceDescriptor(descriptor);
+                  if (consent !== undefined) setExpressFacialConsent(consent);
+                }}
+                label="Member Profile Photo & Biometric Express Enrollment"
               />
             </div>
           </div>

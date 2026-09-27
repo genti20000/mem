@@ -75,6 +75,35 @@ export interface Member {
   notes?: string;
   guestAllowance?: number;
   tier?: string;
+  faceDescriptor?: number[]; // 128-float numerical vector for on-device recognition
+  expressFacialConsent?: boolean; // GDPR explicit consent for express door scanning
+  expressFacialConsentTimestamp?: string;
+}
+
+export interface DoorLog {
+  id: string;
+  timestamp: string; // ISO
+  date: string; // YYYY-MM-DD
+  memberId: string;
+  memberName: string;
+  memberNumber: string;
+  verificationMode: 'dual_qr_face' | 'hands_free_face' | 'manual_override' | 'qr_only';
+  euclideanDistance?: number;
+  confidenceScore?: number;
+  livenessVerified: boolean;
+  granted: boolean;
+  reason?: string;
+  staffId?: string;
+  staffName?: string;
+}
+
+export interface BiometricVerificationResult {
+  matched: boolean;
+  euclideanDistance: number;
+  confidenceScore: number;
+  livenessVerified: boolean;
+  member: Member | null;
+  errorMessage?: string;
 }
 
 export interface Guest {

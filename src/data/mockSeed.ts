@@ -85,6 +85,16 @@ const now = Date.now();
 const hoursAgo = (h: number) => new Date(now - h * 3600 * 1000).toISOString();
 const minutesAgo = (m: number) => new Date(now - m * 60 * 1000).toISOString();
 
+// Helper to generate seed face descriptors (128 floats)
+function generateSeedFaceDescriptor(seed: number): number[] {
+  const descriptor: number[] = [];
+  for (let i = 0; i < 128; i++) {
+    const val = (Math.sin(seed * (i + 1) * 0.17) * 0.22).toFixed(4);
+    descriptor.push(parseFloat(val));
+  }
+  return descriptor;
+}
+
 export const INITIAL_MEMBERS: Member[] = [
   {
     id: 'mem-001',
@@ -110,6 +120,9 @@ export const INITIAL_MEMBERS: Member[] = [
       applicantEmail: 'c.moreau@quovadissoho.co.uk',
     },
     notes: 'Founding Soho hospitality member. Very reliable.',
+    faceDescriptor: generateSeedFaceDescriptor(1),
+    expressFacialConsent: true,
+    expressFacialConsentTimestamp: hoursAgo(120),
   },
   {
     id: 'mem-002',

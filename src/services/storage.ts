@@ -16,6 +16,7 @@ import {
   IncidentRecord,
   AuditEvent,
   UserRole,
+  DoorLog,
 } from '../types';
 
 import {
@@ -35,6 +36,7 @@ import {
   saveVisitToDb,
   saveIncidentToDb,
   saveAuditLogToDb,
+  saveDoorLogToDb,
   testConnection,
   setupFirestoreRealtimeListeners,
   seedInitialFirestoreData,
@@ -51,6 +53,7 @@ const STORAGE_KEYS = {
   HOURLY_CAPACITIES: 'jonnys_hourly_capacities_v2',
   INCIDENTS: 'jonnys_incidents_v2',
   AUDIT_LOGS: 'jonnys_audit_logs_v2',
+  DOOR_LOGS: 'jonnys_door_logs_v2',
   SIMULATED_TIME_OFFSET_MS: 'jonnys_simulated_time_offset_ms',
   IS_TIME_SIMULATION_ACTIVE: 'jonnys_is_time_simulation_active',
 };
@@ -508,6 +511,31 @@ export const clubStore = {
     list.unshift(newEvent);
     setItem(STORAGE_KEYS.AUDIT_LOGS, list);
     saveAuditLogToDb(newEvent);
+  },
+
+  // Door Logs (Biometric Dual-Verification & Express Access Control)
+  getDoorLogs(): DoorLog[] {
+    return getItem<DoorLog[]>(STORAGE_KEYS.DOOR_LOGS, []);
+  },
+
+  addDoorLog(entry: Omit<DoorLog, 'id' | 'timestamp' | 'date'> & Partial<DoorLog>): DoorLog {
+    const list = this.getDoorLogs();
+    const venueDate = getVenueCurrentDate();
+    const newLog: DoorLog = {
+      ...entry,
+      id: entry.id || `door-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      timestamp: entry.timestamp || venueDate.toISOString(),
+      date: entry.date || venueDate.toISOString().split('T')[0],
+      livenessVerified: entry.livenessVerified ?? true,
+      granted: entry.granted ?? false,
+    };
+    list.unshift(newLog);
+    // Keep last 500 door logs
+    if (list.length > 500) list.pop();
+    setItem(STORAGE_KEYS.DOOR_LOGS, list);
+    notify();
+    saveDoorLogToDb(newLog);
+    return newLog;
   },
 
   // Reset to seed data

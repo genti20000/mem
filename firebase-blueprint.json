@@ -23,9 +23,37 @@
         "approvedBy": { "type": "string" },
         "memberNumber": { "type": "string" },
         "acceptedRulesVersion": { "type": "string" },
-        "acceptedRulesTimestamp": { "type": "string" }
+        "acceptedRulesTimestamp": { "type": "string" },
+        "faceDescriptor": { "type": "array" },
+        "expressFacialConsent": { "type": "boolean" },
+        "expressFacialConsentTimestamp": { "type": "string" }
       },
       "required": ["id", "fullName", "email", "status", "appliedAt"]
+    },
+    "DoorLog": {
+      "title": "DoorLog",
+      "description": "Dual verification and facial recognition access control log",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "date": { "type": "string" },
+        "memberId": { "type": "string" },
+        "memberName": { "type": "string" },
+        "memberNumber": { "type": "string" },
+        "verificationMode": {
+          "type": "string",
+          "enum": ["dual_qr_face", "hands_free_face", "manual_override", "qr_only"]
+        },
+        "euclideanDistance": { "type": "number" },
+        "confidenceScore": { "type": "number" },
+        "livenessVerified": { "type": "boolean" },
+        "granted": { "type": "boolean" },
+        "reason": { "type": "string" },
+        "staffId": { "type": "string" },
+        "staffName": { "type": "string" }
+      },
+      "required": ["id", "timestamp", "memberId", "memberName", "verificationMode", "granted"]
     },
     "Visit": {
       "title": "Visit",
@@ -88,6 +116,10 @@
     "/incidents/{incidentId}": {
       "schema": "Incident",
       "description": "Licensing incident register"
+    },
+    "/door_logs/{logId}": {
+      "schema": "DoorLog",
+      "description": "Biometric access control and dual-verification audit logs"
     }
   }
 }

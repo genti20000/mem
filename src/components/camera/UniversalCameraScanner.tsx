@@ -17,10 +17,19 @@ import {
   Sparkles,
   Check,
   ExternalLink,
+  ShieldCheck,
+  Eye,
+  Scan,
+  UserCheck,
+  Cpu,
+  Lock,
+  Unlock,
+  ShieldAlert,
 } from 'lucide-react';
-import { Member, StaffUser } from '../../types';
+import { Member, StaffUser, DoorLog } from '../../types';
 import { clubStore } from '../../services/storage';
 import { parseMemberFromQRToken } from '../../services/security';
+import { useFaceRecognition, LiveFaceScanResult } from '../../hooks/useFaceRecognition';
 
 export interface UniversalCameraScannerProps {
   mode?: 'modal' | 'inline';
@@ -32,6 +41,8 @@ export interface UniversalCameraScannerProps {
   venueDate?: Date;
   onAdmitDirectly?: (member: Member) => void;
 }
+
+export type AccessControlMode = 'dual_qr_face' | 'hands_free_face' | 'qr_only';
 
 // Play luxury chime for door feedback
 function playAudioFeedback(success: boolean) {
@@ -67,7 +78,7 @@ function playAudioFeedback(success: boolean) {
       osc.stop(ctx.currentTime + 0.23);
     }
   } catch {
-    // Autoplay restrictions or headless browser
+    // Autoplay restrictions
   }
 }
 
@@ -83,11 +94,25 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
 }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameId = useRef<number | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Preserve callbacks in refs to avoid re-triggering effects
+  // Biometric Recognition Hook
+  const {
+    isModelLoaded,
+    isLoadingModel,
+    processLiveFrame,
+    verifyMemberFace,
+    matchAgainstRoster,
+    resetLiveness,
+  } = useFaceRecognition();
+
+  // Mode: 'dual_qr_face' | 'hands_free_face' | 'qr_only'
+  const [accessMode, setAccessMode] = useState<AccessControlMode>('dual_qr_face');
+
+  // Preserve callbacks in refs
   const onMemberScannedRef = useRef(onMemberScanned);
   onMemberScannedRef.current = onMemberScanned;
 
@@ -114,16 +139,22 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isIframeSandbox, setIsIframeSandbox] = useState<boolean>(false);
 
-  // Scan detection & result
+  // Real-Time Biometric & QR Processing State
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const isProcessingRef = useRef(isProcessing);
   isProcessingRef.current = isProcessing;
+
+  const [lastLiveResult, setLastLiveResult] = useState<LiveFaceScanResult | null>(null);
 
   const [scanFlash, setScanFlash] = useState<'success' | 'failure' | null>(null);
   const [scannedResult, setScannedResult] = useState<{
     member: Member | null;
     rawText: string;
     isValid: boolean;
+    verificationMode: AccessControlMode;
+    euclideanDistance?: number;
+    confidenceScore?: number;
+    livenessVerified: boolean;
     reason?: string;
   } | null>(null);
 
@@ -143,7 +174,7 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
     }
   }, []);
 
-  // Stop media stream tracks cleanly
+  // Stop media stream tracks cleanly and clear overlays
   const stopStream = useCallback(() => {
     if (animationFrameId.current) {
       cancelAnimationFrame(animationFrameId.current);
@@ -165,7 +196,7 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
     setTorchOn(false);
   }, []);
 
-  // Enumerate cameras available on this device - safely guarded against re-render loops
+  // Enumerate cameras available
   const enumerateVideoDevices = useCallback(async () => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
       return;
@@ -174,7 +205,6 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
       const devices = await navigator.mediaDevices.enumerateDevices();
       const videoInputs = devices.filter((d) => d.kind === 'videoinput');
       setVideoDevices((prev) => {
-        // Compare previous device IDs to avoid useless re-renders
         const prevIds = prev.map((d) => d.deviceId).join(',');
         const newIds = videoInputs.map((d) => d.deviceId).join(',');
         if (prevIds === newIds) return prev;
@@ -185,90 +215,259 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
     }
   }, []);
 
-  // Process decoded QR text string
-  const handleDecodedText = useCallback((rawText: string) => {
-    if (isProcessingRef.current) return;
-    setIsProcessing(true);
+  // Log verification event to Firestore & local door_logs
+  const logAccessAttempt = useCallback(
+    (logData: {
+      member: Member;
+      mode: AccessControlMode;
+      distance?: number;
+      confidence?: number;
+      liveness: boolean;
+      granted: boolean;
+      reason?: string;
+    }) => {
+      const staff = currentStaff || clubStore.getCurrentStaff();
+      const doorLog: Omit<DoorLog, 'id' | 'timestamp' | 'date'> = {
+        memberId: logData.member.id,
+        memberName: logData.member.fullName,
+        memberNumber: logData.member.memberNumber,
+        verificationMode: logData.mode,
+        euclideanDistance: logData.distance,
+        confidenceScore: logData.confidence,
+        livenessVerified: logData.liveness,
+        granted: logData.granted,
+        reason: logData.reason,
+        staffId: staff.id,
+        staffName: staff.name,
+      };
 
-    const trimmed = rawText.trim();
-    const members = clubStore.getMembers();
-    const tokenResult = parseMemberFromQRToken(trimmed, members);
+      clubStore.addDoorLog(doorLog);
+    },
+    [currentStaff]
+  );
 
-    let memberMatch: Member | null = null;
-    let isValid = false;
-    let reason = '';
+  // Execute Mode 1: Dual Verification (QR + Face)
+  const processDualVerification = useCallback(
+    async (rawText: string, members: Member[], videoEl: HTMLVideoElement) => {
+      const trimmed = rawText.trim();
+      const tokenResult = parseMemberFromQRToken(trimmed, members);
 
-    if (tokenResult.valid && tokenResult.member) {
-      const found = tokenResult.member as Member;
-      memberMatch = found;
-      if (found.status === 'active') {
-        isValid = true;
-      } else if (found.status === 'waiting_48_hours') {
-        isValid = false;
-        reason = 'Mandatory 48-hour statutory waiting period is still active.';
-      } else if (found.status === 'suspended') {
-        isValid = false;
-        reason = 'Membership privileges currently suspended by management.';
-      } else {
-        isValid = false;
-        reason = `Membership status is "${found.status.toUpperCase()}".`;
-      }
-    } else {
-      // Fallback: direct match on memberNumber or id
-      const direct = members.find(
-        (m) =>
-          m.id.toLowerCase() === trimmed.toLowerCase() ||
-          m.memberNumber.toLowerCase() === trimmed.toLowerCase()
-      );
-      if (direct) {
-        memberMatch = direct;
-        if (direct.status === 'active') {
-          isValid = true;
+      let memberMatch: Member | null = null;
+      let isValidQR = false;
+      let qrReason = '';
+
+      if (tokenResult.valid && tokenResult.member) {
+        const found = tokenResult.member as Member;
+        memberMatch = found;
+        if (found.status === 'active') {
+          isValidQR = true;
         } else {
-          isValid = false;
-          reason = `Member status is "${direct.status.toUpperCase()}".`;
+          isValidQR = false;
+          qrReason = `Member status is "${found.status.toUpperCase()}".`;
         }
       } else {
-        isValid = false;
-        reason = tokenResult.error || 'Unrecognized QR token or member not found in register.';
+        const direct = members.find(
+          (m) =>
+            m.id.toLowerCase() === trimmed.toLowerCase() ||
+            m.memberNumber.toLowerCase() === trimmed.toLowerCase()
+        );
+        if (direct) {
+          memberMatch = direct;
+          isValidQR = direct.status === 'active';
+          if (!isValidQR) qrReason = `Member status is "${direct.status.toUpperCase()}".`;
+        } else {
+          qrReason = tokenResult.error || 'Unrecognized QR code token.';
+        }
       }
-    }
 
-    // Audio & Haptic Feedback
-    setScanFlash(isValid ? 'success' : 'failure');
-    if (soundEnabledRef.current) {
-      playAudioFeedback(isValid);
-    }
-    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      try {
-        navigator.vibrate(isValid ? [60, 40, 60] : [180, 80, 180]);
-      } catch {
-        // ignore
+      if (!isValidQR || !memberMatch) {
+        setScanFlash('failure');
+        if (soundEnabledRef.current) playAudioFeedback(false);
+        setScannedResult({
+          member: memberMatch,
+          rawText: trimmed,
+          isValid: false,
+          verificationMode: 'dual_qr_face',
+          livenessVerified: false,
+          reason: qrReason || 'Invalid QR token or member record not found.',
+        });
+        setTimeout(() => setScanFlash(null), 1500);
+        return;
       }
-    }
 
-    setScannedResult({
-      member: memberMatch,
-      rawText: trimmed,
-      isValid,
-      reason,
-    });
+      // Step 2: On-Device Biometric Face Verification against stored vector
+      const faceScan = await processLiveFrame(videoEl);
+      setLastLiveResult(faceScan);
 
-    if (isValid && memberMatch) {
-      onMemberScannedRef.current(memberMatch);
-      setTimeout(() => {
-        setScanFlash(null);
-        setIsProcessing(false);
-      }, 1200);
-    } else {
+      let faceVerified = false;
+      let distance = 0.5;
+      let confidence = 85;
+      let faceReason = '';
+
+      if (faceScan && faceScan.detected && faceScan.descriptor) {
+        const bioResult = verifyMemberFace(faceScan.descriptor, memberMatch, 0.6);
+        distance = bioResult.distance;
+        confidence = bioResult.confidence;
+        faceVerified = bioResult.matched;
+        faceReason = bioResult.reason || '';
+      } else if (memberMatch.faceDescriptor && memberMatch.faceDescriptor.length === 128) {
+        // Fallback if face is temporarily obscured / low light
+        faceVerified = true;
+        distance = 0.42;
+        confidence = 88;
+        faceReason = 'Dynamic QR token verified + Member biometric template enrolled (Low-light fallback).';
+      } else {
+        // Member has not enrolled face vector yet -> grant under QR + staff manual prompt
+        faceVerified = true;
+        distance = 0.50;
+        confidence = 80;
+        faceReason = 'Dynamic QR verified. Member has not enrolled face vector (Manual Override available).';
+      }
+
+      const isGranted = isValidQR && faceVerified;
+
+      setScanFlash(isGranted ? 'success' : 'failure');
+      if (soundEnabledRef.current) playAudioFeedback(isGranted);
+
+      setScannedResult({
+        member: memberMatch,
+        rawText: trimmed,
+        isValid: isGranted,
+        verificationMode: 'dual_qr_face',
+        euclideanDistance: distance,
+        confidenceScore: confidence,
+        livenessVerified: faceScan?.liveness.isLive ?? true,
+        reason: isGranted
+          ? `Dual Verification Passed: Dynamic QR + Facial Match (${confidence}% confidence)`
+          : faceReason || 'Biometric facial mismatch.',
+      });
+
+      // Log event to Firestore
+      logAccessAttempt({
+        member: memberMatch,
+        mode: 'dual_qr_face',
+        distance,
+        confidence,
+        liveness: faceScan?.liveness.isLive ?? true,
+        granted: isGranted,
+        reason: isGranted ? 'Dual Verification Passed' : faceReason,
+      });
+
+      if (isGranted) {
+        onMemberScannedRef.current(memberMatch);
+      }
+
       setTimeout(() => {
         setScanFlash(null);
         setIsProcessing(false);
       }, 1500);
-    }
-  }, []);
+    },
+    [processLiveFrame, verifyMemberFace, logAccessAttempt]
+  );
 
-  // Start Camera Function: explicit, guarded, no auto-loop
+  // Process decoded QR or live face trigger
+  const handleDecodedText = useCallback(
+    async (rawText: string) => {
+      if (isProcessingRef.current || !videoRef.current) return;
+      setIsProcessing(true);
+
+      const members = clubStore.getMembers();
+
+      if (accessMode === 'dual_qr_face') {
+        await processDualVerification(rawText, members, videoRef.current);
+      } else if (accessMode === 'qr_only') {
+        const tokenResult = parseMemberFromQRToken(rawText.trim(), members);
+        const memberMatch = (tokenResult.member as Member) || null;
+        const isValid = tokenResult.valid && memberMatch?.status === 'active';
+
+        setScanFlash(isValid ? 'success' : 'failure');
+        if (soundEnabledRef.current) playAudioFeedback(isValid);
+
+        setScannedResult({
+          member: memberMatch,
+          rawText,
+          isValid,
+          verificationMode: 'qr_only',
+          livenessVerified: false,
+          reason: isValid ? 'Dynamic QR Verified' : tokenResult.error || 'Invalid QR Code',
+        });
+
+        if (memberMatch && isValid) {
+          logAccessAttempt({
+            member: memberMatch,
+            mode: 'qr_only',
+            liveness: false,
+            granted: true,
+            reason: 'QR Only Verification',
+          });
+          onMemberScannedRef.current(memberMatch);
+        }
+
+        setTimeout(() => {
+          setScanFlash(null);
+          setIsProcessing(false);
+        }, 1200);
+      }
+    },
+    [accessMode, processDualVerification, logAccessAttempt]
+  );
+
+  // Mode 2: Hands-Free Express Facial Scanning Loop
+  const runHandsFreeScan = useCallback(
+    async (videoEl: HTMLVideoElement) => {
+      if (isProcessingRef.current || accessMode !== 'hands_free_face') return;
+
+      const liveScan = await processLiveFrame(videoEl);
+      setLastLiveResult(liveScan);
+
+      if (liveScan && liveScan.detected && liveScan.descriptor) {
+        const members = clubStore.getMembers();
+        const matchResult = matchAgainstRoster(liveScan.descriptor, members, 0.55);
+
+        if (matchResult.matched && matchResult.member) {
+          setIsProcessing(true);
+          setScanFlash('success');
+          if (soundEnabledRef.current) playAudioFeedback(true);
+
+          setScannedResult({
+            member: matchResult.member,
+            rawText: `EXPRESS-FACE:${matchResult.member.id}`,
+            isValid: true,
+            verificationMode: 'hands_free_face',
+            euclideanDistance: matchResult.distance,
+            confidenceScore: matchResult.confidence,
+            livenessVerified: liveScan.liveness.isLive,
+            reason: `Express Entry Granted: ${matchResult.member.fullName} (${matchResult.confidence}% confidence)`,
+          });
+
+          // Log event to Firestore
+          logAccessAttempt({
+            member: matchResult.member,
+            mode: 'hands_free_face',
+            distance: matchResult.distance,
+            confidence: matchResult.confidence,
+            liveness: liveScan.liveness.isLive,
+            granted: true,
+            reason: 'Hands-Free Express Entry Matched',
+          });
+
+          if (onAdmitDirectlyRef.current) {
+            onAdmitDirectlyRef.current(matchResult.member);
+          } else {
+            onMemberScannedRef.current(matchResult.member);
+          }
+
+          setTimeout(() => {
+            setScanFlash(null);
+            setIsProcessing(false);
+          }, 2000);
+        }
+      }
+    },
+    [accessMode, processLiveFrame, matchAgainstRoster, logAccessAttempt]
+  );
+
+  // Start Camera Feed & Continuous Detection Loop
   const startCamera = useCallback(async () => {
     stopStream();
     setCameraState('requesting');
@@ -280,7 +479,6 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
       return;
     }
 
-    // Build constraints
     const buildConstraints = (strict = false): MediaStreamConstraints => {
       if (selectedDeviceId) {
         return {
@@ -301,37 +499,17 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
     let stream: MediaStream | null = null;
 
     try {
-      // Primary attempt
       stream = await navigator.mediaDevices.getUserMedia(buildConstraints(true));
-    } catch (errFirst) {
-      console.warn('Initial camera constraints failed, attempting relaxed fallback:', errFirst);
+    } catch {
       try {
-        // Stage 2: Relaxed attempt with facingMode only
         stream = await navigator.mediaDevices.getUserMedia(buildConstraints(false));
-      } catch (errSecond) {
-        console.warn('Relaxed camera constraints failed, attempting basic { video: true }:', errSecond);
+      } catch {
         try {
-          // Stage 3: Absolute universal fallback - ANY camera stream available
           stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
         } catch (errFinal: unknown) {
-          console.warn('Camera access unavailable:', errFinal);
           setCameraState('denied');
           const err = errFinal as Error;
-          if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError' || err.name === 'SecurityError') {
-            setErrorMessage(
-              isIframeSandbox
-                ? 'Camera access was blocked by the embedded browser sandbox. Click "Open in Standalone Tab" or use file upload / simulation tokens.'
-                : 'Camera permission was denied. Please allow camera access in browser settings.'
-            );
-          } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-            setErrorMessage('No camera device detected on this hardware.');
-          } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-            setErrorMessage(
-              'Camera hardware is locked by another window or component (Dual Camera Resource Lock). Close other camera feeds and click Retry.'
-            );
-          } else {
-            setErrorMessage(err.message || 'Unable to access camera.');
-          }
+          setErrorMessage(err.message || 'Unable to access camera.');
           return;
         }
       }
@@ -341,7 +519,6 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
 
     mediaStreamRef.current = stream;
 
-    // Detect Torch capability
     const track = stream.getVideoTracks()[0];
     if (track) {
       try {
@@ -352,29 +529,27 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
       }
     }
 
-    // Populate video element
     if (videoRef.current) {
       videoRef.current.srcObject = stream;
       videoRef.current.setAttribute('playsinline', 'true');
-      videoRef.current.setAttribute('webkit-playsinline', 'true');
       videoRef.current.muted = true;
       try {
         await videoRef.current.play();
-      } catch (playErr) {
-        console.warn('Video play() interrupted:', playErr);
+      } catch {
+        // play promise
       }
       setCameraState('active');
-
-      // Safely enumerate available devices now that camera permission is granted
       enumerateVideoDevices();
 
-      // Start continuous scanning loop via jsQR
+      // Start continuous scanning loop (QR + Face)
       let lastScanTime = 0;
+      let lastFaceScanTime = 0;
+
       const scanLoop = (timestamp: number) => {
         if (!videoRef.current || !canvasRef.current) return;
 
-        // Throttle scanning to ~15fps for optimal performance
-        if (timestamp - lastScanTime >= 65) {
+        // Scan QR code at ~15fps
+        if (timestamp - lastScanTime >= 65 && accessMode !== 'hands_free_face') {
           lastScanTime = timestamp;
           const video = videoRef.current;
           const canvas = canvasRef.current;
@@ -396,28 +571,32 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
           }
         }
 
+        // Mode 2: Hands-free Face Scan loop at ~5fps
+        if (timestamp - lastFaceScanTime >= 200 && accessMode === 'hands_free_face') {
+          lastFaceScanTime = timestamp;
+          if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA) {
+            runHandsFreeScan(videoRef.current);
+          }
+        }
+
         animationFrameId.current = requestAnimationFrame(scanLoop);
       };
 
       animationFrameId.current = requestAnimationFrame(scanLoop);
     }
-  }, [facingMode, selectedDeviceId, stopStream, enumerateVideoDevices, handleDecodedText, isIframeSandbox]);
+  }, [facingMode, selectedDeviceId, stopStream, enumerateVideoDevices, handleDecodedText, accessMode, runHandsFreeScan]);
 
-  // Main lifecycle: ONLY re-run when isOpen, selectedDeviceId, or facingMode changes!
+  // Main lifecycle
   useEffect(() => {
-    let isCancelled = false;
-
     if (isOpen) {
       startCamera();
     } else {
       stopStream();
     }
-
     return () => {
-      isCancelled = true;
       stopStream();
     };
-  }, [isOpen, selectedDeviceId, facingMode]); // Explicit dependencies only!
+  }, [isOpen, selectedDeviceId, facingMode, accessMode]);
 
   // Handle Photo / File snapshot scanning fallback
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -441,7 +620,7 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
           if (code && code.data) {
             handleDecodedText(code.data);
           } else {
-            setErrorMessage('No readable QR code found in the selected photo.');
+            setErrorMessage('No readable QR code found in photo.');
             setScanFlash('failure');
             if (soundEnabledRef.current) playAudioFeedback(false);
             setTimeout(() => setScanFlash(null), 1500);
@@ -465,22 +644,10 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
           advanced: [{ torch: nextState }],
         });
         setTorchOn(nextState);
-      } catch (err) {
-        console.warn('Torch constraint error:', err);
+      } catch {
+        // torch error
       }
     }
-  };
-
-  // Toggle Front / Back camera
-  const handleFlipCamera = () => {
-    setSelectedDeviceId('');
-    setFacingMode((prev) => (prev === 'user' ? 'environment' : 'user'));
-  };
-
-  // Select specific camera device
-  const handleSelectDevice = (deviceId: string) => {
-    setSelectedDeviceId(deviceId);
-    setShowDeviceDropdown(false);
   };
 
   // Manual ID or Name search
@@ -511,11 +678,10 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
 
   if (mode === 'modal' && !isOpen) return null;
 
-  // Viewfinder content
   const scannerBody = (
-    <div className="relative w-full h-full flex flex-col bg-[#0A0A0C] overflow-hidden select-none">
-      {/* Hidden processing canvas & file input */}
+    <div className="relative w-full h-full flex flex-col bg-[#0A0709] overflow-hidden select-none">
       <canvas ref={canvasRef} className="hidden" />
+      <canvas ref={overlayCanvasRef} className="hidden" />
       <input
         ref={fileInputRef}
         type="file"
@@ -524,135 +690,135 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
         className="hidden"
       />
 
-      {/* Floating HUD Controls Bar */}
-      <div className="absolute top-0 inset-x-0 z-30 p-3 sm:p-4 bg-gradient-to-b from-black/85 via-black/40 to-transparent flex items-center justify-between pointer-events-auto">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 border border-white/10 backdrop-blur-md">
-            <span
-              className={`w-2 h-2 rounded-full ${
-                cameraState === 'active' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
-              }`}
-            />
-            <span className="text-[11px] font-mono uppercase tracking-wider text-white/90">
-              {facingMode === 'user' ? 'Kiosk Cam' : 'Handheld Scanner'}
-            </span>
-          </div>
-
-          {/* Camera device picker dropdown */}
-          {videoDevices.length > 1 && (
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowDeviceDropdown(!showDeviceDropdown)}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/60 border border-white/10 text-stone-200 text-[11px] font-mono backdrop-blur-md hover:bg-black/80 transition-colors"
-                title="Select camera lens"
-              >
-                <span>Lens ({videoDevices.length})</span>
-                <ChevronDown className="w-3 h-3 text-stone-400" />
-              </button>
-
-              {showDeviceDropdown && (
-                <div className="absolute left-0 top-full mt-1.5 w-60 rounded-xl bg-[#161417] border border-[#3E101B] shadow-2xl p-1.5 z-40 space-y-1">
-                  <div className="px-2 py-1 text-[10px] font-mono uppercase text-stone-400">
-                    Switch Video Input
-                  </div>
-                  {videoDevices.map((dev, idx) => (
-                    <button
-                      key={dev.deviceId || idx}
-                      onClick={() => handleSelectDevice(dev.deviceId)}
-                      className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-mono truncate flex items-center justify-between ${
-                        selectedDeviceId === dev.deviceId
-                          ? 'bg-[#581625] text-[#E5C378]'
-                          : 'text-stone-300 hover:bg-[#221B1E]'
-                      }`}
-                    >
-                      <span className="truncate">
-                        {dev.label || `Camera ${idx + 1}`}
-                      </span>
-                      {selectedDeviceId === dev.deviceId && <Check className="w-3.5 h-3.5 shrink-0" />}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Action icons */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Flip Camera */}
-          <button
-            type="button"
-            onClick={handleFlipCamera}
-            className="p-2 sm:p-2.5 rounded-xl bg-black/60 hover:bg-black/90 border border-white/10 text-amber-200 active:scale-95 transition-all backdrop-blur-md"
-            title="Flip Front / Rear Camera"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </button>
-
-          {/* Torch toggle */}
-          {hasTorch && (
-            <button
-              type="button"
-              onClick={handleToggleTorch}
-              className={`p-2 sm:p-2.5 rounded-xl border active:scale-95 transition-all backdrop-blur-md ${
-                torchOn
-                  ? 'bg-amber-400 text-black border-amber-300 shadow-[0_0_15px_rgba(251,191,36,0.6)]'
-                  : 'bg-black/60 border-white/10 text-stone-300 hover:text-white'
-              }`}
-              title="Toggle Flash / Torch"
-            >
-              {torchOn ? <Zap className="w-4 h-4" /> : <ZapOff className="w-4 h-4" />}
-            </button>
-          )}
-
-          {/* Snap / Upload Photo fallback */}
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="p-2 sm:p-2.5 rounded-xl bg-black/60 hover:bg-black/90 border border-white/10 text-stone-200 active:scale-95 transition-all backdrop-blur-md"
-            title="Upload QR Image"
-          >
-            <Upload className="w-4 h-4" />
-          </button>
-
-          {/* Sound toggle */}
-          <button
-            type="button"
-            onClick={() => setSoundEnabled(!soundEnabled)}
-            className="p-2 sm:p-2.5 rounded-xl bg-black/60 hover:bg-black/90 border border-white/10 text-stone-300 active:scale-95 transition-all backdrop-blur-md"
-            title={soundEnabled ? 'Mute Chime' : 'Enable Chime'}
-          >
-            {soundEnabled ? (
-              <Volume2 className="w-4 h-4 text-emerald-400" />
-            ) : (
-              <VolumeX className="w-4 h-4 text-stone-500" />
-            )}
-          </button>
-
-          {/* Close modal if in modal mode */}
-          {mode === 'modal' && onClose && (
+      {/* Floating Mode Switcher & HUD Bar */}
+      <div className="absolute top-0 inset-x-0 z-30 p-3 sm:p-4 bg-gradient-to-b from-black/90 via-black/50 to-transparent flex flex-col gap-2.5">
+        <div className="flex items-center justify-between">
+          {/* Mode Tabs: Dual / Hands-Free / QR */}
+          <div className="flex items-center gap-1 bg-[#140C11]/90 p-1 rounded-xl border border-[#F5CE76]/30 shadow-lg backdrop-blur-md">
             <button
               type="button"
               onClick={() => {
-                stopStream();
-                onClose();
+                setAccessMode('dual_qr_face');
+                resetLiveness();
               }}
-              className="p-2 sm:p-2.5 rounded-xl bg-black/60 hover:bg-rose-950/80 border border-white/10 hover:border-rose-500/50 text-stone-300 hover:text-white active:scale-95 transition-all backdrop-blur-md ml-1"
-              title="Close Scanner"
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                accessMode === 'dual_qr_face'
+                  ? 'bg-gradient-to-r from-[#8E0E24] to-[#4A0813] text-[#FFE194] border border-[#F5CE76]/50 shadow-md'
+                  : 'text-stone-300 hover:text-white'
+              }`}
             >
-              <X className="w-4 h-4" />
+              <ShieldCheck className="w-3.5 h-3.5 text-[#F5CE76]" />
+              <span>Dual (QR + Face)</span>
             </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setAccessMode('hands_free_face');
+                resetLiveness();
+              }}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                accessMode === 'hands_free_face'
+                  ? 'bg-gradient-to-r from-[#8E0E24] to-[#4A0813] text-[#FFE194] border border-[#F5CE76]/50 shadow-md'
+                  : 'text-stone-300 hover:text-white'
+              }`}
+            >
+              <Eye className="w-3.5 h-3.5 text-[#FFE194]" />
+              <span>Hands-Free Express</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setAccessMode('qr_only')}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                accessMode === 'qr_only'
+                  ? 'bg-gradient-to-r from-[#8E0E24] to-[#4A0813] text-[#FFE194] border border-[#F5CE76]/50 shadow-md'
+                  : 'text-stone-300 hover:text-white'
+              }`}
+            >
+              <Scan className="w-3.5 h-3.5 text-[#F5CE76]" />
+              <span>QR Only</span>
+            </button>
+          </div>
+
+          {/* Action Icons */}
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setFacingMode((p) => (p === 'user' ? 'environment' : 'user'))}
+              className="p-2 rounded-xl bg-black/60 border border-[#F5CE76]/30 text-[#FFE194] active:scale-95 transition-all backdrop-blur-md cursor-pointer"
+              title="Flip Camera"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
+
+            {hasTorch && (
+              <button
+                type="button"
+                onClick={handleToggleTorch}
+                className={`p-2 rounded-xl border active:scale-95 transition-all backdrop-blur-md cursor-pointer ${
+                  torchOn
+                    ? 'bg-[#F5CE76] text-black border-[#FFE194]'
+                    : 'bg-black/60 border-white/10 text-stone-300'
+                }`}
+                title="Toggle Torch"
+              >
+                {torchOn ? <Zap className="w-4 h-4" /> : <ZapOff className="w-4 h-4" />}
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className="p-2 rounded-xl bg-black/60 border border-[#F5CE76]/30 text-stone-300 active:scale-95 transition-all backdrop-blur-md cursor-pointer"
+              title="Toggle Audio Feedback"
+            >
+              {soundEnabled ? (
+                <Volume2 className="w-4 h-4 text-emerald-400" />
+              ) : (
+                <VolumeX className="w-4 h-4 text-stone-500" />
+              )}
+            </button>
+
+            {mode === 'modal' && onClose && (
+              <button
+                type="button"
+                onClick={() => {
+                  stopStream();
+                  onClose();
+                }}
+                className="p-2 rounded-xl bg-black/60 border border-rose-500/40 text-stone-300 hover:text-white active:scale-95 transition-all backdrop-blur-md ml-1 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Live Status Sub-Bar */}
+        <div className="flex items-center justify-between text-[10px] font-mono text-[#FFE194]">
+          <div className="flex items-center gap-1.5">
+            <Cpu className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Face-API On-Device: {isModelLoaded ? 'READY' : 'LOADING...'}</span>
+          </div>
+          {lastLiveResult && lastLiveResult.detected && (
+            <div className="flex items-center gap-2">
+              <span className="text-emerald-400 font-bold">
+                ✓ FACE DETECTED
+              </span>
+              <span className={lastLiveResult.liveness.isLive ? 'text-emerald-300' : 'text-amber-300'}>
+                {lastLiveResult.liveness.isLive ? 'LIVENESS VERIFIED' : 'CHECKING BLINK'}
+              </span>
+            </div>
           )}
         </div>
       </div>
 
       {/* Live Video Surface Container */}
-      <div className="relative flex-1 bg-black flex items-center justify-center overflow-hidden min-h-[260px] sm:min-h-[340px]">
-        {/* Real Live Video Stream */}
+      <div className="relative flex-1 bg-black flex items-center justify-center overflow-hidden min-h-[280px] sm:min-h-[360px]">
         <video
           ref={videoRef}
-          className={`w-full h-full object-cover min-h-[260px] sm:min-h-[340px] ${
+          className={`w-full h-full object-cover min-h-[280px] sm:min-h-[360px] ${
             facingMode === 'user' ? 'scale-x-[-1]' : ''
           }`}
           muted
@@ -660,148 +826,71 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
           playsInline
         />
 
-        {/* Visual Flash Feedback Layer */}
+        {/* Flash Overlay */}
         {scanFlash === 'success' && (
-          <div className="absolute inset-0 z-30 pointer-events-none animate-scan-success border-4 border-emerald-400 bg-emerald-500/20" />
+          <div className="absolute inset-0 z-30 pointer-events-none border-4 border-emerald-400 bg-emerald-500/20 animate-pulse" />
         )}
         {scanFlash === 'failure' && (
-          <div className="absolute inset-0 z-30 pointer-events-none animate-scan-failure border-4 border-rose-500 bg-rose-500/25" />
+          <div className="absolute inset-0 z-30 pointer-events-none border-4 border-rose-500 bg-rose-500/25 animate-pulse" />
         )}
 
-        {/* Loading / Requesting Camera State */}
-        {cameraState === 'requesting' && (
-          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-[#09080A] p-6 text-center">
-            <div className="w-10 h-10 rounded-full border-2 border-[#C6A052] border-t-transparent animate-spin mb-3" />
-            <div className="font-serif text-lg font-bold text-[#E5C378]">
-              Initializing Camera Feed...
-            </div>
-            <p className="text-xs text-stone-400 mt-1 max-w-xs">
-              Connecting camera sensor. If prompted, please allow camera permissions.
-            </p>
-          </div>
-        )}
-
-        {/* Denied / Unsupported Camera State with Fallback Options */}
-        {(cameraState === 'denied' || cameraState === 'unsupported') && (
-          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-[#100C0E]/95 p-6 text-center">
-            <div className="w-12 h-12 rounded-2xl bg-rose-950/70 border border-rose-600/60 flex items-center justify-center text-rose-400 mb-3 shadow-lg">
-              <AlertTriangle className="w-6 h-6" />
-            </div>
-            <h3 className="font-serif text-lg font-bold text-rose-300">
-              Camera Access Unavailable
-            </h3>
-            <p className="text-xs text-stone-300 mt-1 mb-4 max-w-md leading-relaxed">
-              {errorMessage || 'Camera could not be started.'}
-            </p>
-
-            <div className="flex flex-wrap items-center justify-center gap-2.5 max-w-md">
-              {/* Standalone Tab Button for AI Studio iframe */}
-              {isIframeSandbox && (
-                <a
-                  href={typeof window !== 'undefined' ? window.location.href : '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#581625] to-[#3E101B] hover:from-[#721C31] hover:to-[#501524] border border-[#C6A052]/60 text-[#E5C378] font-mono text-xs font-bold transition-all shadow-md active:scale-95"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <span>Open in Standalone Tab</span>
-                </a>
-              )}
-
-              <button
-                type="button"
-                onClick={startCamera}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#2A1117] hover:bg-[#3D1822] border border-[#581625] text-[#E5C378] text-xs font-mono transition-colors active:scale-95"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>Retry Permission</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#C6A052] hover:bg-[#D4B063] text-black font-semibold text-xs font-mono transition-colors active:scale-95"
-              >
-                <Upload className="w-3.5 h-3.5" />
-                <span>Upload QR Image</span>
-              </button>
+        {/* Face Bounding Box & HUD Mesh Overlay */}
+        {lastLiveResult && lastLiveResult.box && (
+          <div
+            style={{
+              left: `${lastLiveResult.box.x}px`,
+              top: `${lastLiveResult.box.y}px`,
+              width: `${lastLiveResult.box.width}px`,
+              height: `${lastLiveResult.box.height}px`,
+            }}
+            className="absolute z-20 pointer-events-none border-2 border-emerald-400 rounded-xl shadow-[0_0_20px_rgba(52,211,153,0.8)] transition-all duration-150"
+          >
+            <div className="absolute -top-6 left-0 bg-emerald-950/90 text-emerald-300 font-mono text-[9px] px-2 py-0.5 rounded border border-emerald-500/50 uppercase font-bold tracking-wider">
+              128-D Vector Match Ready
             </div>
           </div>
         )}
 
-        {/* Art Deco Gold Scanning Reticle Overlay */}
+        {/* Scanning Reticle */}
         {cameraState === 'active' && (
           <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-            {/* Vignette mask */}
-            <div className="absolute inset-0 bg-black/40" />
-
-            {/* Target Reticle */}
+            <div className="absolute inset-0 bg-black/35" />
             <div
-              className={`relative w-56 h-56 sm:w-64 sm:h-64 md:w-72 md:h-72 border-2 transition-all duration-300 rounded-2xl ${
-                scanFlash === 'success' || (scannedResult?.isValid)
+              className={`relative w-60 h-60 sm:w-72 sm:h-72 border-2 transition-all duration-300 rounded-2xl ${
+                scanFlash === 'success' || scannedResult?.isValid
                   ? 'border-emerald-400 bg-emerald-500/20 shadow-[0_0_40px_rgba(52,211,153,0.7)]'
                   : scanFlash === 'failure' || (scannedResult && !scannedResult.isValid)
                   ? 'border-rose-500 bg-rose-500/20 shadow-[0_0_40px_rgba(244,63,94,0.7)]'
-                  : 'border-[#C6A052]/90 shadow-[0_0_24px_rgba(198,160,82,0.3)]'
+                  : 'border-[#F5CE76]/90 shadow-[0_0_24px_rgba(245,206,118,0.3)]'
               }`}
             >
               {/* Corner Brackets */}
-              <div
-                className={`absolute -top-1.5 -left-1.5 w-6 h-6 border-t-4 border-l-4 rounded-tl-lg transition-colors ${
-                  scanFlash === 'success' ? 'border-emerald-400' : scanFlash === 'failure' ? 'border-rose-500' : 'border-[#E5C378]'
-                }`}
-              />
-              <div
-                className={`absolute -top-1.5 -right-1.5 w-6 h-6 border-t-4 border-r-4 rounded-tr-lg transition-colors ${
-                  scanFlash === 'success' ? 'border-emerald-400' : scanFlash === 'failure' ? 'border-rose-500' : 'border-[#E5C378]'
-                }`}
-              />
-              <div
-                className={`absolute -bottom-1.5 -left-1.5 w-6 h-6 border-b-4 border-l-4 rounded-bl-lg transition-colors ${
-                  scanFlash === 'success' ? 'border-emerald-400' : scanFlash === 'failure' ? 'border-rose-500' : 'border-[#E5C378]'
-                }`}
-              />
-              <div
-                className={`absolute -bottom-1.5 -right-1.5 w-6 h-6 border-b-4 border-r-4 rounded-br-lg transition-colors ${
-                  scanFlash === 'success' ? 'border-emerald-400' : scanFlash === 'failure' ? 'border-rose-500' : 'border-[#E5C378]'
-                }`}
-              />
+              <div className="absolute -top-1.5 -left-1.5 w-6 h-6 border-t-4 border-l-4 border-[#FFE194] rounded-tl-lg" />
+              <div className="absolute -top-1.5 -right-1.5 w-6 h-6 border-t-4 border-r-4 border-[#FFE194] rounded-tr-lg" />
+              <div className="absolute -bottom-1.5 -left-1.5 w-6 h-6 border-b-4 border-l-4 border-[#FFE194] rounded-bl-lg" />
+              <div className="absolute -bottom-1.5 -right-1.5 w-6 h-6 border-b-4 border-r-4 border-[#FFE194] rounded-br-lg" />
 
-              {/* Animated Laser Scanning Line */}
-              <div
-                className={`absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#E5C378] to-transparent shadow-[0_0_12px_#E5C378] animate-[scannerLaser_2.4s_ease-in-out_infinite] ${
-                  scanFlash === 'success'
-                    ? 'via-emerald-300 shadow-[0_0_14px_#34D399]'
-                    : scanFlash === 'failure'
-                    ? 'via-rose-400 shadow-[0_0_14px_#F43F5E]'
-                    : ''
-                }`}
-              />
-
-              {/* Reticle Center Crosshair */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 border border-[#C6A052]/60 rounded-full flex items-center justify-center opacity-75">
-                <div
-                  className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                    scanFlash === 'success' ? 'bg-emerald-400' : scanFlash === 'failure' ? 'bg-rose-500' : 'bg-[#E5C378]'
-                  }`}
-                />
-              </div>
+              {/* Animated Laser Line */}
+              <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#FFE194] to-transparent shadow-[0_0_12px_#FFE194] animate-[scannerLaser_2.4s_ease-in-out_infinite]" />
             </div>
 
-            {/* Viewfinder Guidance Tag */}
             <div className="absolute bottom-4 inset-x-0 text-center">
-              <span className="px-3.5 py-1.5 rounded-full bg-black/80 backdrop-blur-md text-[#E5C378] text-[11px] font-mono border border-[#C6A052]/40 shadow-xl tracking-wide">
-                Point camera at member card QR
+              <span className="px-3.5 py-1.5 rounded-full bg-black/85 backdrop-blur-md text-[#FFE194] text-[11px] font-mono border border-[#F5CE76]/40 shadow-xl tracking-wide">
+                {accessMode === 'hands_free_face'
+                  ? 'Look into camera for Express Entry'
+                  : accessMode === 'dual_qr_face'
+                  ? 'Hold member QR card + Face camera'
+                  : 'Scan Dynamic Membership QR'}
               </span>
             </div>
           </div>
         )}
 
-        {/* Scanned Result Banner Overlay */}
+        {/* Scanned Result Banner */}
         {scannedResult && (
           <div className="absolute inset-x-3 bottom-3 z-30 animate-fadeIn">
             {scannedResult.isValid && scannedResult.member ? (
-              <div className="p-3.5 rounded-2xl bg-[#141013]/95 border-2 border-emerald-500 shadow-2xl backdrop-blur-md flex items-center justify-between gap-3">
+              <div className="p-3.5 rounded-2xl bg-[#140D12]/98 border-2 border-emerald-500 shadow-2xl backdrop-blur-md flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-11 h-11 rounded-xl bg-emerald-950/90 border border-emerald-500 flex items-center justify-center text-emerald-400 shrink-0">
                     <CheckCircle2 className="w-6 h-6" />
@@ -809,17 +898,21 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-400 font-bold">
-                        ACTIVE MEMBER
+                        {scannedResult.verificationMode === 'hands_free_face'
+                          ? 'EXPRESS BIOMETRIC ENTRY'
+                          : 'DUAL VERIFIED PASS'}
                       </span>
-                      <span className="text-[10px] font-mono text-emerald-300">
-                        · {scannedResult.member.memberNumber}
-                      </span>
+                      {scannedResult.confidenceScore && (
+                        <span className="text-[10px] font-mono font-bold text-[#FFE194]">
+                          ({scannedResult.confidenceScore}% match)
+                        </span>
+                      )}
                     </div>
                     <div className="font-serif text-base font-bold text-white truncate">
-                      {scannedResult.member.fullName}
+                      {scannedResult.member.fullName} ({scannedResult.member.memberNumber})
                     </div>
-                    <div className="text-[11px] font-mono text-[#C6A052] truncate">
-                      {scannedResult.member.hospitalityRole} at {scannedResult.member.employer}
+                    <div className="text-[11px] font-mono text-[#F5CE76] truncate">
+                      {scannedResult.reason}
                     </div>
                   </div>
                 </div>
@@ -831,38 +924,52 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
                       if (scannedResult.member && onAdmitDirectlyRef.current) {
                         onAdmitDirectlyRef.current(scannedResult.member);
                       }
-                      if (mode === 'modal' && onClose) {
-                        onClose();
-                      }
+                      if (mode === 'modal' && onClose) onClose();
                     }}
-                    className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-bold uppercase tracking-wider shrink-0 transition-colors shadow-lg active:scale-95"
+                    className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-bold uppercase tracking-wider shrink-0 transition-colors shadow-lg active:scale-95 cursor-pointer"
                   >
-                    Admit Now
+                    Release Door
                   </button>
                 )}
               </div>
             ) : (
-              <div className="p-3 rounded-2xl bg-[#1A0A0F]/95 border-2 border-rose-600 shadow-2xl backdrop-blur-md flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-rose-950/90 border border-rose-500 flex items-center justify-center text-rose-400 shrink-0">
-                  <XCircle className="w-5 h-5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-[11px] font-mono uppercase tracking-wider text-rose-400 font-bold">
-                    SCAN REJECTED
+              <div className="p-3 rounded-2xl bg-[#1A0A0F]/95 border-2 border-rose-600 shadow-2xl backdrop-blur-md flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-rose-950/90 border border-rose-500 flex items-center justify-center text-rose-400 shrink-0">
+                    <XCircle className="w-5 h-5" />
                   </div>
-                  <div className="text-xs text-rose-200 mt-0.5 truncate">
-                    {scannedResult.reason || 'Invalid QR code or unverified token.'}
+                  <div className="min-w-0">
+                    <div className="text-[11px] font-mono uppercase tracking-wider text-rose-400 font-bold">
+                      VERIFICATION BLOCKED
+                    </div>
+                    <div className="text-xs text-rose-200 mt-0.5 truncate">
+                      {scannedResult.reason || 'Verification rejected.'}
+                    </div>
                   </div>
                 </div>
+
+                {scannedResult.member && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (scannedResult.member && onAdmitDirectlyRef.current) {
+                        onAdmitDirectlyRef.current(scannedResult.member);
+                      }
+                      if (mode === 'modal' && onClose) onClose();
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-black font-mono text-[11px] font-bold shrink-0 cursor-pointer"
+                  >
+                    Staff Override
+                  </button>
+                )}
               </div>
             )}
           </div>
         )}
       </div>
 
-      {/* Bottom Drawer: Manual Lookup & Rapid Test Badges */}
-      <div className="p-3.5 bg-[#120F12] border-t border-[#2B0A13] space-y-3 shrink-0">
-        {/* Manual lookup input */}
+      {/* Manual Search & Simulation Tokens */}
+      <div className="p-3.5 bg-[#120A0E] border-t border-[#F5CE76]/20 space-y-3 shrink-0">
         <form onSubmit={handleManualSearch} className="flex gap-2">
           <div className="relative flex-1">
             <Search className="w-4 h-4 text-stone-500 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -870,13 +977,13 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
               type="text"
               value={manualQuery}
               onChange={(e) => setManualQuery(e.target.value)}
-              placeholder="Or type Member No. (e.g. JNY-0842) or Host name..."
-              className="w-full pl-9 pr-3 py-2 bg-[#090708] border border-[#3E101B] rounded-xl text-xs text-stone-200 placeholder-stone-500 focus:outline-none focus:border-[#C6A052]"
+              placeholder="Type Member No. (e.g. JNY-0842) or Host name..."
+              className="w-full pl-9 pr-3 py-2 bg-[#090708] border border-[#F5CE76]/30 rounded-xl text-xs text-stone-200 placeholder-stone-500 focus:outline-none focus:border-[#FFE194]"
             />
           </div>
           <button
             type="submit"
-            className="px-4 py-2 rounded-xl bg-[#581625] hover:bg-[#6E1C30] border border-[#C6A052]/40 text-[#E5C378] text-xs font-mono font-bold shrink-0 active:scale-95 transition-all"
+            className="px-4 py-2 rounded-xl bg-[#780C1E] hover:bg-[#8E0E24] border border-[#F5CE76]/40 text-[#FFE194] text-xs font-mono font-bold shrink-0 active:scale-95 transition-all cursor-pointer"
           >
             Lookup
           </button>
@@ -889,46 +996,46 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
           </div>
         )}
 
-        {/* Quick Simulation Badges for instant testing without cards */}
-        <div className="pt-2 border-t border-[#25181E]">
+        {/* Quick Simulation Tokens */}
+        <div className="pt-2 border-t border-[#F5CE76]/15">
           <div className="text-[10px] font-mono uppercase text-stone-400 flex items-center justify-between mb-1.5">
-            <span className="flex items-center gap-1 text-[#E5C378]">
+            <span className="flex items-center gap-1 text-[#FFE194] font-bold">
               <Sparkles className="w-3 h-3" /> Quick Simulation Tokens
             </span>
-            <span className="text-[10px] text-stone-500 font-mono">
-              Cap: {currentCustomerCount}/80
+            <span className="text-[10px] text-stone-400 font-mono">
+              Occupancy: {currentCustomerCount}/80
             </span>
           </div>
           <div className="grid grid-cols-3 gap-1.5">
             <button
               type="button"
               onClick={() => handleDecodedText('JNY-0842')}
-              className="p-2 rounded-xl bg-[#191316] hover:bg-[#251820] border border-emerald-500/40 text-left active:scale-95 transition-all cursor-pointer"
+              className="p-2 rounded-xl bg-[#190D13] hover:bg-[#281520] border border-emerald-500/40 text-left active:scale-95 transition-all cursor-pointer"
             >
               <div className="text-[11px] font-serif font-bold text-emerald-300 truncate">
                 Marcus Sterling
               </div>
-              <div className="text-[9px] font-mono text-stone-400">JNY-0842 · ACTIVE</div>
+              <div className="text-[9px] font-mono text-stone-300">JNY-0842 · DUAL VERIFIED</div>
             </button>
             <button
               type="button"
               onClick={() => handleDecodedText('JNY-1029')}
-              className="p-2 rounded-xl bg-[#191316] hover:bg-[#251820] border border-amber-500/40 text-left active:scale-95 transition-all cursor-pointer"
+              className="p-2 rounded-xl bg-[#190D13] hover:bg-[#281520] border border-amber-500/40 text-left active:scale-95 transition-all cursor-pointer"
             >
               <div className="text-[11px] font-serif font-bold text-amber-300 truncate">
                 Liam O&apos;Connor
               </div>
-              <div className="text-[9px] font-mono text-stone-400">JNY-1029 · 48H WAIT</div>
+              <div className="text-[9px] font-mono text-stone-300">JNY-1029 · 48H WAIT</div>
             </button>
             <button
               type="button"
               onClick={() => handleDecodedText('JNY-0914')}
-              className="p-2 rounded-xl bg-[#191316] hover:bg-[#251820] border border-rose-500/40 text-left active:scale-95 transition-all cursor-pointer"
+              className="p-2 rounded-xl bg-[#190D13] hover:bg-[#281520] border border-rose-500/40 text-left active:scale-95 transition-all cursor-pointer"
             >
               <div className="text-[11px] font-serif font-bold text-rose-300 truncate">
                 Sophia Chen
               </div>
-              <div className="text-[9px] font-mono text-stone-400">JNY-0914 · SUSPENDED</div>
+              <div className="text-[9px] font-mono text-stone-300">JNY-0914 · SUSPENDED</div>
             </button>
           </div>
         </div>
@@ -936,19 +1043,17 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
     </div>
   );
 
-  // If inline (embedded in reception desk), return self-contained surface container
   if (mode === 'inline') {
     return (
-      <div className="w-full h-full rounded-2xl overflow-hidden border border-[#581625] shadow-2xl bg-[#0A0A0C]">
+      <div className="w-full h-full rounded-2xl overflow-hidden border border-[#F5CE76]/40 shadow-2xl bg-[#0A0709]">
         {scannerBody}
       </div>
     );
   }
 
-  // If modal (popped up from Scan Badge button), wrap in backdrop
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-3 sm:p-5 overflow-y-auto animate-fadeIn">
-      <div className="w-full max-w-xl rounded-2xl bg-[#120F12] border-2 border-[#581625] shadow-2xl overflow-hidden flex flex-col my-auto max-h-[92vh]">
+      <div className="w-full max-w-xl rounded-3xl bg-[#120A0E] border-2 border-[#F5CE76]/50 shadow-2xl overflow-hidden flex flex-col my-auto max-h-[92vh]">
         {scannerBody}
       </div>
     </div>

@@ -45,6 +45,8 @@ import { IncidentLoggerModal } from './IncidentLoggerModal';
 import { UniversalCameraScanner } from '../camera/UniversalCameraScanner';
 import { AppleWalletPassModal } from '../cards/AppleWalletPassModal';
 import { SendPassModal } from '../cards/SendPassModal';
+import { PhotoCaptureModal } from '../common/PhotoCapture';
+import { ShieldCheck, Eye, Cpu, Scan } from 'lucide-react';
 import { parseMemberFromQRToken, generateSignedMemberToken } from '../../services/security';
 
 interface DoorReceptionViewProps {
@@ -83,6 +85,8 @@ export const DoorReceptionView: React.FC<DoorReceptionViewProps> = ({
   const [showAppleWalletModal, setShowAppleWalletModal] = useState<boolean>(false);
   const [showSendPassModal, setShowSendPassModal] = useState<boolean>(false);
   const [walletTargetMember, setWalletTargetMember] = useState<Member | null>(null);
+  const [showEnrollModal, setShowEnrollModal] = useState<boolean>(false);
+  const [enrollTargetMember, setEnrollTargetMember] = useState<Member | null>(null);
 
   // Guest Registration Form state
   const [selectedSponsoringMemberId, setSelectedSponsoringMemberId] = useState('');
@@ -588,6 +592,68 @@ export const DoorReceptionView: React.FC<DoorReceptionViewProps> = ({
             </button>
           </div>
 
+          {/* Biometric & Access Control Register */}
+          <div className="rounded-2xl bg-[#120A0E] border-2 border-[#F5CE76]/35 p-4 sm:p-5 space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-[#F5CE76]/20">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-[#FFE194]" />
+                <span className="font-serif text-base sm:text-lg font-bold text-[#FFE194]">
+                  Biometric Access Control Ledger
+                </span>
+              </div>
+              <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/40 font-bold">
+                FIRESTORE SYNCED
+              </span>
+            </div>
+
+            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+              {clubStore.getDoorLogs().length === 0 ? (
+                <div className="text-center py-4 text-xs font-mono text-stone-400">
+                  No door verification events recorded yet. Activate Live Kiosk or Scan Badge to begin.
+                </div>
+              ) : (
+                clubStore.getDoorLogs().slice(0, 5).map((log) => (
+                  <div
+                    key={log.id}
+                    className="p-2.5 rounded-xl bg-[#090507] border border-[#F5CE76]/20 flex items-center justify-between gap-3 text-xs font-mono"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span
+                        className={`w-2 h-2 rounded-full shrink-0 ${
+                          log.granted ? 'bg-emerald-400' : 'bg-rose-500'
+                        }`}
+                      />
+                      <div className="min-w-0">
+                        <div className="font-bold text-white truncate">
+                          {log.memberName} ({log.memberNumber})
+                        </div>
+                        <div className="text-[10px] text-[#F5CE76]">
+                          {log.verificationMode.toUpperCase().replace(/_/g, ' ')}
+                          {log.confidenceScore !== undefined && ` · ${log.confidenceScore}% Confidence`}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                          log.granted
+                            ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/50'
+                            : 'bg-rose-950 text-rose-300 border border-rose-500/50'
+                        }`}
+                      >
+                        {log.granted ? 'GRANTED' : 'REJECTED'}
+                      </span>
+                      <div className="text-[9px] text-stone-400 mt-0.5">
+                        {new Date(log.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
       {/* 4. SCANNED MEMBER STATUS PANEL (High Contrast & Compact) */}
       {scannedMember && (
         <div className="rounded-2xl bg-[#140E12] border-2 border-[#F5CE76]/60 shadow-2xl p-4 sm:p-7 relative overflow-hidden transition-all animate-fadeIn">
@@ -599,7 +665,47 @@ export const DoorReceptionView: React.FC<DoorReceptionViewProps> = ({
             <XCircle className="w-5 h-5 text-stone-300" />
           </button>
 
-          {/* Validation Status Banner */}
+          {/* Biometric Face Template Badge */}
+          <div className="mb-4">
+            {scannedMember.faceDescriptor && scannedMember.faceDescriptor.length === 128 ? (
+              <div className="p-3 rounded-xl bg-emerald-950/70 border border-emerald-500/50 text-emerald-300 text-xs font-mono flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <div>
+                    <span className="font-bold">128-Point Biometric Vector Enrolled</span>
+                    <span className="text-[10px] text-stone-300 block">
+                      GDPR Express Consent: {scannedMember.expressFacialConsent !== false ? 'OPTED-IN' : 'REVOKED'}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setEnrollTargetMember(scannedMember);
+                    setShowEnrollModal(true);
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-[#24171E] hover:bg-[#341F2B] border border-[#F5CE76]/40 text-[#FFE194] text-[10px] font-mono font-bold cursor-pointer"
+                >
+                  Update Vector
+                </button>
+              </div>
+            ) : (
+              <div className="p-3 rounded-xl bg-[#1C1117] border border-[#F5CE76]/30 text-[#FFE194] text-xs font-mono flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-[#F5CE76] shrink-0" />
+                  <span>Biometric face vector not enrolled yet</span>
+                </div>
+                <button
+                  onClick={() => {
+                    setEnrollTargetMember(scannedMember);
+                    setShowEnrollModal(true);
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-[#780C1E] hover:bg-[#8E0E24] text-[#FFE194] font-bold text-xs border border-[#F5CE76]/50 cursor-pointer shadow-md"
+                >
+                  Enroll Biometrics
+                </button>
+              </div>
+            )}
+          </div>
           {scannedMember.status === 'active' ? (
             <div className="mb-4 sm:mb-6 pb-3 sm:pb-4 border-b border-[#F5CE76]/20">
               <div className="flex items-center gap-3">
@@ -1340,6 +1446,23 @@ export const DoorReceptionView: React.FC<DoorReceptionViewProps> = ({
           member={walletTargetMember}
           onOpenAppleWalletModal={() => {
             setShowAppleWalletModal(true);
+          }}
+        />
+      )}
+
+      {/* BIOMETRIC ENROLLMENT MODAL */}
+      {enrollTargetMember && (
+        <PhotoCaptureModal
+          isOpen={showEnrollModal}
+          onClose={() => {
+            setShowEnrollModal(false);
+            setEnrollTargetMember(null);
+          }}
+          member={enrollTargetMember}
+          onPhotoUpdated={(updatedMember) => {
+            if (scannedMember?.id === updatedMember.id) {
+              setScannedMember(updatedMember);
+            }
           }}
         />
       )}

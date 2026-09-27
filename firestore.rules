@@ -57,6 +57,13 @@ service cloud.firestore {
       allow delete: if false; // Statutory audit requirement
     }
 
+    // Door Access Control & Biometric Verification Logs
+    match /door_logs/{logId} {
+      allow read: if true;
+      allow create: if isValidId(logId);
+      allow update, delete: if false; // Statutory tamper-evident audit requirement
+    }
+
     // Audit Logs & Hourly Capacity
     match /audit_logs/{logId} {
       allow read: if true;

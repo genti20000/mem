@@ -20,7 +20,7 @@ import {
   Firestore,
 } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
-import { Member, VisitRecord, IncidentRecord, AuditEvent } from '../types';
+import { Member, VisitRecord, IncidentRecord, AuditEvent, DoorLog } from '../types';
 
 // Initialize Firebase App
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
@@ -154,6 +154,21 @@ export async function saveAuditLogToDb(log: AuditEvent): Promise<void> {
     }, { merge: true });
   } catch (err) {
     console.error('[Firestore] Error saving audit log:', err);
+  }
+}
+
+/**
+ * Save Biometric & Dual-Verification Access Control Log to Firestore
+ */
+export async function saveDoorLogToDb(doorLog: DoorLog): Promise<void> {
+  try {
+    const ref = doc(db, 'door_logs', doorLog.id);
+    await setDoc(ref, {
+      ...doorLog,
+      _createdAt: new Date().toISOString(),
+    }, { merge: true });
+  } catch (err) {
+    console.error('[Firestore] Error saving door access log:', err);
   }
 }
 

@@ -98,15 +98,43 @@ export function isDbConnected(): boolean {
 }
 
 /**
+ * Recursively strips undefined values from objects before writing to Firestore
+ * to prevent 'Function setDoc() called with invalid data. Unsupported field value: undefined' errors.
+ */
+export function sanitizeForFirestore<T>(obj: T): Record<string, any> {
+  if (obj === null || typeof obj !== 'object') {
+    return obj as any;
+  }
+  if (Array.isArray(obj)) {
+    return obj
+      .map((item) => (item !== null && typeof item === 'object' ? sanitizeForFirestore(item) : item))
+      .filter((item) => item !== undefined);
+  }
+  const sanitized: Record<string, any> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value === undefined) {
+      continue; // Omit undefined properties completely for Firestore compatibility
+    }
+    if (value !== null && typeof value === 'object' && !(value instanceof Date)) {
+      sanitized[key] = sanitizeForFirestore(value);
+    } else {
+      sanitized[key] = value;
+    }
+  }
+  return sanitized;
+}
+
+/**
  * Save / Update Member in Firestore
  */
 export async function saveMemberToDb(member: Member): Promise<void> {
   try {
     const ref = doc(db, 'members', member.id);
-    await setDoc(ref, {
+    const payload = sanitizeForFirestore({
       ...member,
       _updatedAt: new Date().toISOString(),
-    }, { merge: true });
+    });
+    await setDoc(ref, payload, { merge: true });
   } catch (err) {
     console.error('[Firestore] Error saving member:', err);
   }
@@ -118,10 +146,11 @@ export async function saveMemberToDb(member: Member): Promise<void> {
 export async function saveVisitToDb(visit: VisitRecord): Promise<void> {
   try {
     const ref = doc(db, 'visits', visit.id);
-    await setDoc(ref, {
+    const payload = sanitizeForFirestore({
       ...visit,
       _updatedAt: new Date().toISOString(),
-    }, { merge: true });
+    });
+    await setDoc(ref, payload, { merge: true });
   } catch (err) {
     console.error('[Firestore] Error saving visit:', err);
   }
@@ -133,10 +162,11 @@ export async function saveVisitToDb(visit: VisitRecord): Promise<void> {
 export async function saveIncidentToDb(incident: IncidentRecord): Promise<void> {
   try {
     const ref = doc(db, 'incidents', incident.id);
-    await setDoc(ref, {
+    const payload = sanitizeForFirestore({
       ...incident,
       _createdAt: new Date().toISOString(),
-    }, { merge: true });
+    });
+    await setDoc(ref, payload, { merge: true });
   } catch (err) {
     console.error('[Firestore] Error saving incident:', err);
   }
@@ -148,10 +178,11 @@ export async function saveIncidentToDb(incident: IncidentRecord): Promise<void> 
 export async function saveAuditLogToDb(log: AuditEvent): Promise<void> {
   try {
     const ref = doc(db, 'audit_logs', log.id);
-    await setDoc(ref, {
+    const payload = sanitizeForFirestore({
       ...log,
       _createdAt: new Date().toISOString(),
-    }, { merge: true });
+    });
+    await setDoc(ref, payload, { merge: true });
   } catch (err) {
     console.error('[Firestore] Error saving audit log:', err);
   }
@@ -163,10 +194,11 @@ export async function saveAuditLogToDb(log: AuditEvent): Promise<void> {
 export async function saveDoorLogToDb(doorLog: DoorLog): Promise<void> {
   try {
     const ref = doc(db, 'door_logs', doorLog.id);
-    await setDoc(ref, {
+    const payload = sanitizeForFirestore({
       ...doorLog,
       _createdAt: new Date().toISOString(),
-    }, { merge: true });
+    });
+    await setDoc(ref, payload, { merge: true });
   } catch (err) {
     console.error('[Firestore] Error saving door access log:', err);
   }
@@ -262,7 +294,7 @@ export async function seedInitialFirestoreData(initialData: {
     if (membersSnap.empty) {
       console.log('[Firestore] Seeding initial members into cloud database...');
       for (const m of initialData.members) {
-        await setDoc(doc(db, 'members', m.id), m);
+        await setDoc(doc(db, 'members', m.id), sanitizeForFirestore(m));
       }
     }
 
@@ -270,7 +302,7 @@ export async function seedInitialFirestoreData(initialData: {
     if (visitsSnap.empty) {
       console.log('[Firestore] Seeding initial visits into cloud database...');
       for (const v of initialData.visits) {
-        await setDoc(doc(db, 'visits', v.id), v);
+        await setDoc(doc(db, 'visits', v.id), sanitizeForFirestore(v));
       }
     }
 
@@ -278,7 +310,7 @@ export async function seedInitialFirestoreData(initialData: {
     if (incidentsSnap.empty) {
       console.log('[Firestore] Seeding initial incidents into cloud database...');
       for (const i of initialData.incidents) {
-        await setDoc(doc(db, 'incidents', i.id), i);
+        await setDoc(doc(db, 'incidents', i.id), sanitizeForFirestore(i));
       }
     }
   } catch (err) {

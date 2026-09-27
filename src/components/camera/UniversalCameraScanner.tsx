@@ -364,8 +364,9 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
 
       setTimeout(() => {
         setScanFlash(null);
+        setScannedResult(null);
         setIsProcessing(false);
-      }, 1500);
+      }, 2500);
     },
     [processLiveFrame, verifyMemberFace, logAccessAttempt]
   );
@@ -426,8 +427,9 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
 
           setTimeout(() => {
             setScanFlash(null);
+            setScannedResult(null);
             setIsProcessing(false);
-          }, 2000);
+          }, 2500);
           return;
         }
       }
@@ -470,8 +472,9 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
 
         setTimeout(() => {
           setScanFlash(null);
+          setScannedResult(null);
           setIsProcessing(false);
-        }, 1200);
+        }, 2500);
       }
     },
     [accessMode, processDualVerification, logAccessAttempt]
@@ -543,8 +546,9 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
 
           setTimeout(() => {
             setScanFlash(null);
+            setScannedResult(null);
             setIsProcessing(false);
-          }, 2000);
+          }, 2500);
         }
       }
     },
@@ -775,37 +779,37 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
       />
 
       {/* Floating Mode Switcher & HUD Bar */}
-      <div className="absolute top-0 inset-x-0 z-30 p-2.5 sm:p-3.5 bg-gradient-to-b from-black/95 via-black/60 to-transparent flex flex-col gap-2">
-        <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
-          {/* Mode Selector Tabs */}
-          <div className="flex items-center gap-1 bg-[#140C11]/95 p-1 rounded-xl border border-[#F5CE76]/40 shadow-xl backdrop-blur-md">
+      <div className="absolute top-0 inset-x-0 z-30 p-2 sm:p-3.5 bg-gradient-to-b from-black/95 via-black/70 to-transparent flex flex-col gap-1.5">
+        <div className="flex items-center justify-between gap-1.5">
+          {/* Mode Selector Tabs (Horizontally Scrollable on Mobile) */}
+          <div className="flex items-center gap-1 bg-[#140C11]/95 p-1 rounded-xl border border-[#F5CE76]/40 shadow-xl backdrop-blur-md overflow-x-auto max-w-[calc(100%-110px)] sm:max-w-none no-scrollbar">
             <button
               type="button"
               onClick={() => {
                 setAccessMode('hands_free_face');
                 resetLiveness();
               }}
-              className={`px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`px-2.5 py-1.5 rounded-lg text-[10px] sm:text-[11px] font-mono font-bold transition-all flex items-center gap-1 shrink-0 cursor-pointer ${
                 accessMode === 'hands_free_face'
                   ? 'bg-gradient-to-r from-[#8E0E24] to-[#4A0813] text-[#FFE194] border border-[#F5CE76]/60 shadow-md ring-1 ring-[#F5CE76]/40'
                   : 'text-stone-300 hover:text-white hover:bg-white/5'
               }`}
             >
-              <Eye className="w-3.5 h-3.5 text-[#FFE194]" />
-              <span>Face Only (Hands-Free)</span>
+              <Eye className="w-3.5 h-3.5 text-[#FFE194] shrink-0" />
+              <span className="whitespace-nowrap">Face (Hands-Free)</span>
             </button>
 
             <button
               type="button"
               onClick={() => setAccessMode('qr_only')}
-              className={`px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`px-2.5 py-1.5 rounded-lg text-[10px] sm:text-[11px] font-mono font-bold transition-all flex items-center gap-1 shrink-0 cursor-pointer ${
                 accessMode === 'qr_only'
                   ? 'bg-gradient-to-r from-[#8E0E24] to-[#4A0813] text-[#FFE194] border border-[#F5CE76]/60 shadow-md ring-1 ring-[#F5CE76]/40'
                   : 'text-stone-300 hover:text-white hover:bg-white/5'
               }`}
             >
-              <Scan className="w-3.5 h-3.5 text-[#F5CE76]" />
-              <span>QR Code Only</span>
+              <Scan className="w-3.5 h-3.5 text-[#F5CE76] shrink-0" />
+              <span className="whitespace-nowrap">QR Only</span>
             </button>
 
             <button
@@ -814,53 +818,53 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
                 setAccessMode('dual_qr_face');
                 resetLiveness();
               }}
-              className={`px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`px-2.5 py-1.5 rounded-lg text-[10px] sm:text-[11px] font-mono font-bold transition-all flex items-center gap-1 shrink-0 cursor-pointer ${
                 accessMode === 'dual_qr_face'
                   ? 'bg-gradient-to-r from-[#8E0E24] to-[#4A0813] text-[#FFE194] border border-[#F5CE76]/60 shadow-md ring-1 ring-[#F5CE76]/40'
                   : 'text-stone-300 hover:text-white hover:bg-white/5'
               }`}
             >
-              <ShieldCheck className="w-3.5 h-3.5 text-[#F5CE76]" />
-              <span>Dual (QR + Face)</span>
+              <ShieldCheck className="w-3.5 h-3.5 text-[#F5CE76] shrink-0" />
+              <span className="whitespace-nowrap">Dual (QR+Face)</span>
             </button>
           </div>
 
           {/* Action Icons */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 shrink-0">
             <button
               type="button"
               onClick={() => setFacingMode((p) => (p === 'user' ? 'environment' : 'user'))}
-              className="p-2 rounded-xl bg-black/60 border border-[#F5CE76]/30 text-[#FFE194] active:scale-95 transition-all backdrop-blur-md cursor-pointer"
+              className="p-1.5 sm:p-2 rounded-xl bg-black/60 border border-[#F5CE76]/30 text-[#FFE194] active:scale-95 transition-all backdrop-blur-md cursor-pointer"
               title="Flip Camera"
             >
-              <RefreshCw className="w-4 h-4" />
+              <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
 
             {hasTorch && (
               <button
                 type="button"
                 onClick={handleToggleTorch}
-                className={`p-2 rounded-xl border active:scale-95 transition-all backdrop-blur-md cursor-pointer ${
+                className={`p-1.5 sm:p-2 rounded-xl border active:scale-95 transition-all backdrop-blur-md cursor-pointer ${
                   torchOn
                     ? 'bg-[#F5CE76] text-black border-[#FFE194]'
                     : 'bg-black/60 border-white/10 text-stone-300'
                 }`}
                 title="Toggle Torch"
               >
-                {torchOn ? <Zap className="w-4 h-4" /> : <ZapOff className="w-4 h-4" />}
+                {torchOn ? <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <ZapOff className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
               </button>
             )}
 
             <button
               type="button"
               onClick={() => setSoundEnabled(!soundEnabled)}
-              className="p-2 rounded-xl bg-black/60 border border-[#F5CE76]/30 text-stone-300 active:scale-95 transition-all backdrop-blur-md cursor-pointer"
+              className="p-1.5 sm:p-2 rounded-xl bg-black/60 border border-[#F5CE76]/30 text-stone-300 active:scale-95 transition-all backdrop-blur-md cursor-pointer"
               title="Toggle Audio Feedback"
             >
               {soundEnabled ? (
-                <Volume2 className="w-4 h-4 text-emerald-400" />
+                <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
               ) : (
-                <VolumeX className="w-4 h-4 text-stone-500" />
+                <VolumeX className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-stone-500" />
               )}
             </button>
 
@@ -871,49 +875,44 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
                   stopStream();
                   onClose();
                 }}
-                className="p-2 rounded-xl bg-black/60 border border-rose-500/40 text-stone-300 hover:text-white active:scale-95 transition-all backdrop-blur-md ml-1 cursor-pointer"
+                className="p-1.5 sm:p-2 rounded-xl bg-black/60 border border-rose-500/40 text-stone-300 hover:text-white active:scale-95 transition-all backdrop-blur-md ml-0.5 cursor-pointer"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </button>
             )}
           </div>
         </div>
 
         {/* Live Status Sub-Bar */}
-        <div className="flex items-center justify-between text-[10px] font-mono text-[#FFE194] flex-wrap gap-1">
-          <div className="flex items-center gap-1.5">
-            <Cpu className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Face-API On-Device: {isModelLoaded ? 'READY' : 'LOADING...'}</span>
+        <div className="flex items-center justify-between text-[9px] sm:text-[10px] font-mono text-[#FFE194] flex-wrap gap-1">
+          <div className="flex items-center gap-1">
+            <Cpu className="w-3 h-3 text-emerald-400" />
+            <span>Face-API: {isModelLoaded ? 'READY' : 'LOADING...'}</span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             {/* TrueDepth LiDAR Badge */}
-            <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-cyan-950 border border-cyan-400/60 text-cyan-200 font-bold shadow-sm">
-              <Sparkles className="w-3 h-3 text-cyan-300 animate-pulse" />
-              <span>LiDAR 3D SENSING: ACTIVE</span>
+            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-cyan-950 border border-cyan-400/60 text-cyan-200 font-bold shadow-sm">
+              <Sparkles className="w-2.5 h-2.5 text-cyan-300 animate-pulse" />
+              <span>LiDAR 3D: ACTIVE</span>
             </div>
 
             {lastLiveResult && lastLiveResult.detected && (
-              <>
-                <span className="text-emerald-400 font-bold hidden sm:inline">
-                  ✓ 3D HUMAN DETECTED
-                </span>
-                <span className={lastLiveResult.lidarDepth?.is3DDisparityValid ? 'text-cyan-300 font-bold' : 'text-amber-300'}>
-                  {lastLiveResult.lidarDepth?.is3DDisparityValid
-                    ? `Z-DISPARITY: ${lastLiveResult.lidarDepth.depthDisparityMm}mm [SECURE]`
-                    : 'CALIBRATING 3D MESH...'}
-                </span>
-              </>
+              <span className={lastLiveResult.lidarDepth?.is3DDisparityValid ? 'text-cyan-300 font-bold' : 'text-amber-300'}>
+                {lastLiveResult.lidarDepth?.is3DDisparityValid
+                  ? `Z: ${lastLiveResult.lidarDepth.depthDisparityMm}mm`
+                  : '3D MESH...'}
+              </span>
             )}
           </div>
         </div>
       </div>
 
       {/* Live Video Surface Container */}
-      <div className="relative flex-1 bg-black flex items-center justify-center overflow-hidden min-h-[280px] sm:min-h-[360px]">
+      <div className="relative flex-1 bg-black flex items-center justify-center overflow-hidden min-h-[200px] xs:min-h-[240px] sm:min-h-[320px] w-full h-full">
         <video
           ref={videoRef}
-          className={`w-full h-full object-cover min-h-[280px] sm:min-h-[360px] ${
+          className={`w-full h-full object-cover min-h-0 ${
             facingMode === 'user' ? 'scale-x-[-1]' : ''
           }`}
           muted
@@ -977,12 +976,12 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
             <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" />
             
             {/* Outer Rotating Sonar Ring */}
-            <div className="absolute w-72 h-72 sm:w-80 sm:h-80 rounded-full border border-[#F5CE76]/20 border-dashed animate-[spin_12s_linear_infinite]" />
-            <div className="absolute w-80 h-80 sm:w-96 sm:h-96 rounded-full border border-emerald-500/10 border-dotted animate-[spin_20s_linear_infinite_reverse]" />
+            <div className="absolute w-52 h-52 xs:w-60 xs:h-60 sm:w-80 sm:h-80 rounded-full border border-[#F5CE76]/20 border-dashed animate-[spin_12s_linear_infinite]" />
+            <div className="absolute w-60 h-60 xs:w-68 xs:h-68 sm:w-96 sm:h-96 rounded-full border border-emerald-500/10 border-dotted animate-[spin_20s_linear_infinite_reverse]" />
 
             {/* Central Viewfinder Frame */}
             <div
-              className={`relative w-64 h-64 sm:w-80 sm:h-80 border-2 transition-all duration-300 rounded-3xl overflow-hidden ${
+              className={`relative w-44 h-44 xs:w-52 xs:h-52 sm:w-80 sm:h-80 border-2 transition-all duration-300 rounded-2xl sm:rounded-3xl overflow-hidden ${
                 scanFlash === 'success' || scannedResult?.isValid
                   ? 'border-emerald-400 bg-emerald-500/20 shadow-[0_0_60px_rgba(52,211,153,0.8)]'
                   : scanFlash === 'failure' || (scannedResult && !scannedResult.isValid)
@@ -991,16 +990,16 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
               }`}
             >
               {/* Corner Brackets */}
-              <div className="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-[#FFE194] rounded-tl-2xl shadow-[0_0_10px_#FFE194]" />
-              <div className="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-[#FFE194] rounded-tr-2xl shadow-[0_0_10px_#FFE194]" />
-              <div className="absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-[#FFE194] rounded-bl-2xl shadow-[0_0_10px_#FFE194]" />
-              <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-[#FFE194] rounded-br-2xl shadow-[0_0_10px_#FFE194]" />
+              <div className="absolute -top-1 -left-1 w-6 h-6 sm:w-8 sm:h-8 border-t-4 border-l-4 border-[#FFE194] rounded-tl-xl sm:rounded-tl-2xl shadow-[0_0_10px_#FFE194]" />
+              <div className="absolute -top-1 -right-1 w-6 h-6 sm:w-8 sm:h-8 border-t-4 border-r-4 border-[#FFE194] rounded-tr-xl sm:rounded-tr-2xl shadow-[0_0_10px_#FFE194]" />
+              <div className="absolute -bottom-1 -left-1 w-6 h-6 sm:w-8 sm:h-8 border-b-4 border-l-4 border-[#FFE194] rounded-bl-xl sm:rounded-bl-2xl shadow-[0_0_10px_#FFE194]" />
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 sm:w-8 sm:h-8 border-b-4 border-r-4 border-[#FFE194] rounded-br-xl sm:rounded-br-2xl shadow-[0_0_10px_#FFE194]" />
 
               {/* Center Target Crosshair */}
               <div className="absolute inset-0 flex items-center justify-center opacity-40">
-                <div className="w-12 h-px bg-[#FFE194]" />
-                <div className="h-12 w-px bg-[#FFE194]" />
-                <div className="absolute w-16 h-16 rounded-full border border-[#FFE194]" />
+                <div className="w-8 sm:w-12 h-px bg-[#FFE194]" />
+                <div className="h-8 sm:h-12 w-px bg-[#FFE194]" />
+                <div className="absolute w-10 h-10 sm:w-16 sm:h-16 rounded-full border border-[#FFE194]" />
               </div>
 
               {/* Dual Animated High-Tech Laser Lines */}
@@ -1012,15 +1011,15 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
             </div>
 
             {/* HUD Status Floating Pill */}
-            <div className="absolute bottom-5 inset-x-0 flex justify-center">
-              <div className="px-4 py-2 rounded-full bg-gradient-to-r from-black/95 via-[#1A1116]/95 to-black/95 backdrop-blur-md text-[#FFE194] text-xs font-mono border border-[#F5CE76]/60 shadow-2xl tracking-wider flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                <span>
+            <div className="absolute bottom-2 xs:bottom-3 sm:bottom-5 inset-x-2 flex justify-center pointer-events-none">
+              <div className="px-2.5 py-1 sm:px-4 sm:py-2 rounded-full bg-gradient-to-r from-black/95 via-[#1A1116]/95 to-black/95 backdrop-blur-md text-[#FFE194] text-[10px] sm:text-xs font-mono border border-[#F5CE76]/60 shadow-2xl tracking-wider flex items-center gap-1.5 max-w-[95%] truncate">
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-400 animate-ping shrink-0" />
+                <span className="truncate">
                   {accessMode === 'hands_free_face'
-                    ? 'BIOMETRIC EXPRESS SCAN: ALIGN FACE IN FRAME'
+                    ? 'EXPRESS SCAN: ALIGN FACE'
                     : accessMode === 'dual_qr_face'
-                    ? 'DUAL MODE: HOLD MEMBER PASS + FACE CAMERA'
-                    : 'SCAN DYNAMIC QR CARD'}
+                    ? 'DUAL MODE: PASS + FACE'
+                    : 'SCAN MEMBER QR PASS'}
                 </span>
               </div>
             </div>
@@ -1193,8 +1192,8 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-3 sm:p-5 overflow-y-auto animate-fadeIn">
-      <div className="w-full max-w-xl rounded-3xl bg-[#120A0E] border-2 border-[#F5CE76]/50 shadow-2xl overflow-hidden flex flex-col my-auto max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-2 sm:p-5 overflow-hidden animate-fadeIn">
+      <div className="w-full max-w-xl rounded-2xl sm:rounded-3xl bg-[#120A0E] border-2 border-[#F5CE76]/50 shadow-2xl overflow-hidden flex flex-col h-[94vh] sm:h-auto max-h-[96vh] sm:max-h-[90vh]">
         {scannerBody}
       </div>
     </div>

@@ -145,6 +145,16 @@ export const DoorReceptionView: React.FC<DoorReceptionViewProps> = ({
   // Selected Member Status Panel (Active / Waiting / Suspended)
   const [scannedMember, setScannedMember] = useState<Member | null>(null);
   const [scanMessage, setScanMessage] = useState<string | null>(null);
+
+  // Auto-clear welcome/re-entry message after 2.5s to keep camera view clean
+  useEffect(() => {
+    if (scanMessage) {
+      const timer = setTimeout(() => {
+        setScanMessage(null);
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [scanMessage]);
   const [showAppleWalletModal, setShowAppleWalletModal] = useState<boolean>(false);
   const [showSendPassModal, setShowSendPassModal] = useState<boolean>(false);
   const [walletTargetMember, setWalletTargetMember] = useState<Member | null>(null);
@@ -591,9 +601,9 @@ export const DoorReceptionView: React.FC<DoorReceptionViewProps> = ({
         {/* Left Pane: Camera Surface & Control Grid */}
         <div className="pane space-y-4 sm:space-y-6">
           {/* Camera Surface: Modern Universal Kiosk Viewfinder */}
-          <div className="rounded-2xl overflow-hidden border border-[#F5CE76]/30 bg-[#0D0A0C] min-h-[220px] sm:min-h-[300px] flex flex-col shadow-xl">
+          <div className="rounded-2xl overflow-hidden border border-[#F5CE76]/30 bg-[#0D0A0C] flex flex-col shadow-xl">
             {isKioskScannerActive ? (
-              <div className="relative w-full aspect-[16/10] min-h-[280px] sm:min-h-[320px]">
+              <div className="relative w-full h-[380px] xs:h-[420px] sm:h-[460px] md:h-[480px]">
                 {showScannerModal ? (
                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#09080A] text-center p-6 space-y-2">
                     <div className="w-12 h-12 rounded-full border border-[#F5CE76]/40 bg-[#1A1215] flex items-center justify-center text-[#FFE194]">

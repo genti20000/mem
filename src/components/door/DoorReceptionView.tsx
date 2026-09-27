@@ -113,7 +113,7 @@ export const DoorReceptionView: React.FC<DoorReceptionViewProps> = ({
   const [showScannerModal, setShowScannerModal] = useState(false);
 
   // iPad / Kiosk Fullscreen Mode State
-  const [isKioskScannerActive, setIsKioskScannerActive] = useState(true);
+  const [isKioskScannerActive, setIsKioskScannerActive] = useState(false);
   const [isKioskFullScreen, setIsKioskFullScreen] = useState(false);
 
   const toggleFullScreenKiosk = async () => {
@@ -256,6 +256,9 @@ export const DoorReceptionView: React.FC<DoorReceptionViewProps> = ({
 
   const nightMode = getNightModeState(currentDate);
   const allMembers = clubStore.getMembers();
+  const waitingListCount = allMembers.filter(
+    (m) => m.status === 'waiting_48_hours' || m.status === 'pending'
+  ).length;
 
   // Inspect member check-in & guest status
   const getMemberActiveGuestsCount = (memberId: string): number => {
@@ -537,73 +540,87 @@ export const DoorReceptionView: React.FC<DoorReceptionViewProps> = ({
 
   return (
     <div className="flex flex-col">
-      {/* Utility Grid - Amica Late Velvet & Obsidian Specification */}
-      <section className="utility-grid grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-px bg-[#F5CE76]/20 border-b border-[#F5CE76]/25">
-        <div className="util-box">
-          <div className="label text-xs text-[#F5CE76] font-bold">VENUE OCCUPANCY</div>
+      {/* Utility Grid - Key-Value Data Cards (Ultra Compact) */}
+      <section className="utility-grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-px bg-[#F5CE76]/20 border-b border-[#F5CE76]/25">
+        <div className="util-box py-2 px-2.5 bg-[#0F0A0E]">
+          <div className="label text-[10px] text-[#F5CE76] font-bold uppercase tracking-wider">Active Members in Venue</div>
           <div className="value flex items-baseline gap-1 text-white">
-            <span className="text-2xl sm:text-3xl font-extrabold">{stats.totalCustomers}</span>
-            <span className="text-base sm:text-lg text-[#F5CE76] font-semibold opacity-70">/80</span>
+            <span className="text-lg sm:text-xl font-extrabold text-emerald-300">{stats.membersInside}</span>
+            <span className="text-[10px] font-mono text-emerald-400 font-bold">INSIDE</span>
           </div>
-          <div className="text-[11px] font-mono font-medium text-stone-300 mt-1">
-            Max 80 customer license
-          </div>
-        </div>
-
-        <div className="util-box">
-          <div className="label text-xs text-[#F5CE76] font-bold">MEMBERS INSIDE</div>
-          <div className="value text-white text-2xl sm:text-3xl font-extrabold">{stats.membersInside}</div>
-          <div className="text-[11px] font-mono font-medium text-stone-300 mt-1">
+          <div className="text-[9px] font-mono text-stone-300 mt-0.5 truncate">
             Active passholders
           </div>
         </div>
 
-        <div className="util-box">
-          <div className="label text-xs text-[#F5CE76] font-bold">MEMBER GUESTS</div>
-          <div className="value text-white text-2xl sm:text-3xl font-extrabold">{stats.guestsInside}</div>
-          <div className="text-[11px] font-mono font-medium text-stone-300 mt-1">
+        <div className="util-box py-2 px-2.5 bg-[#0F0A0E]">
+          <div className="label text-[10px] text-[#F5CE76] font-bold uppercase tracking-wider">Waiting List Count</div>
+          <div className="value flex items-baseline gap-1 text-white">
+            <span className="text-lg sm:text-xl font-extrabold text-amber-300">{waitingListCount}</span>
+            <span className="text-[10px] font-mono text-amber-400 font-bold">PENDING</span>
+          </div>
+          <div className="text-[9px] font-mono text-stone-300 mt-0.5 truncate">
+            48h statutory review
+          </div>
+        </div>
+
+        <div className="util-box py-2 px-2.5 bg-[#0F0A0E]">
+          <div className="label text-[10px] text-[#F5CE76] font-bold uppercase tracking-wider">Venue Occupancy</div>
+          <div className="value flex items-baseline gap-1 text-white">
+            <span className="text-lg sm:text-xl font-extrabold">{stats.totalCustomers}</span>
+            <span className="text-xs text-[#F5CE76] font-semibold opacity-70">/80</span>
+          </div>
+          <div className="text-[9px] font-mono text-stone-300 mt-0.5 truncate">
+            Max 80 customer license
+          </div>
+        </div>
+
+        <div className="util-box py-2 px-2.5 bg-[#0F0A0E]">
+          <div className="label text-[10px] text-[#F5CE76] font-bold uppercase tracking-wider">Member Guests</div>
+          <div className="value text-white text-lg sm:text-xl font-extrabold">{stats.guestsInside}</div>
+          <div className="text-[9px] font-mono text-stone-300 mt-0.5 truncate">
             Max 2 per member
           </div>
         </div>
 
-        <div className="util-box">
-          <div className="label text-xs text-[#F5CE76] font-bold">PROPRIETOR GUESTS</div>
+        <div className="util-box py-2 px-2.5 bg-[#0F0A0E]">
+          <div className="label text-[10px] text-[#F5CE76] font-bold uppercase tracking-wider">Proprietor Guests</div>
           <div className="value flex items-baseline gap-1 text-white">
-            <span className="text-2xl sm:text-3xl font-extrabold">{stats.proprietorGuestsInside}</span>
-            <span className="text-base sm:text-lg text-[#F5CE76] font-semibold opacity-70">/5</span>
+            <span className="text-lg sm:text-xl font-extrabold">{stats.proprietorGuestsInside}</span>
+            <span className="text-xs text-[#F5CE76] font-semibold opacity-70">/5</span>
           </div>
-          <div className="text-[11px] font-mono font-medium text-stone-300 mt-1">
+          <div className="text-[9px] font-mono text-stone-300 mt-0.5 truncate">
             Christian / Jonny list
           </div>
         </div>
 
         <div
           onClick={() => setShowSmokingModal(true)}
-          className="util-box cursor-pointer hover:bg-[#1A1216] transition-colors col-span-2 md:col-span-1 border-t sm:border-t-0 border-[#F5CE76]/30"
+          className="util-box py-2 px-2.5 bg-[#0F0A0E] cursor-pointer hover:bg-[#1A1216] transition-colors col-span-2 md:col-span-1 border-t sm:border-t-0 border-[#F5CE76]/30"
         >
           <div className="label flex items-center justify-between">
-            <span className="text-amber-300 font-bold">TERRACE SMOKING</span>
-            <span className="text-amber-300 font-bold">TERRACE</span>
+            <span className="text-amber-300 font-bold text-[10px] uppercase tracking-wider">Terrace Smoking</span>
+            <span className="text-amber-300 font-bold text-[9px]">TERRACE</span>
           </div>
           <div className="value flex items-baseline gap-1 text-amber-300">
-            <span className="text-2xl sm:text-3xl font-extrabold">{stats.smokersOutside}</span>
-            <span className="text-base sm:text-lg text-amber-200 opacity-70">/10</span>
+            <span className="text-lg sm:text-xl font-extrabold">{stats.smokersOutside}</span>
+            <span className="text-xs text-amber-200 opacity-70">/10</span>
           </div>
-          <div className="text-[11px] font-mono text-amber-300 font-semibold mt-1 flex items-center justify-between">
+          <div className="text-[9px] font-mono text-amber-300 font-semibold mt-0.5 flex items-center justify-between">
             <span>Manage Capacity</span>
-            <ChevronRight className="w-3.5 h-3.5" />
+            <ChevronRight className="w-3 h-3" />
           </div>
         </div>
       </section>
 
-      {/* Main Workspace - Compact on Mobile, High Contrast */}
-      <section className="workspace p-3 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_420px] gap-5 sm:gap-8">
+      {/* Main Workspace - Ultra-Compact High Contrast */}
+      <section className="workspace p-2.5 sm:p-4 lg:p-5 grid grid-cols-1 lg:grid-cols-[1fr_340px] xl:grid-cols-[1fr_380px] gap-3 sm:gap-5">
         {/* Left Pane: Camera Surface & Control Grid */}
-        <div className="pane space-y-4 sm:space-y-6">
-          {/* Camera Surface: Modern Universal Kiosk Viewfinder */}
+        <div className="pane space-y-3 sm:space-y-4">
+          {/* Camera Surface: Modern Universal Kiosk Viewfinder (Compact) */}
           <div className="rounded-2xl overflow-hidden border border-[#F5CE76]/30 bg-[#0D0A0C] flex flex-col shadow-xl">
             {isKioskScannerActive ? (
-              <div className="relative w-full h-[380px] xs:h-[420px] sm:h-[460px] md:h-[480px]">
+              <div className="relative w-full h-[320px] xs:h-[350px] sm:h-[380px]">
                 {showScannerModal ? (
                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#09080A] text-center p-6 space-y-2">
                     <div className="w-12 h-12 rounded-full border border-[#F5CE76]/40 bg-[#1A1215] flex items-center justify-center text-[#FFE194]">
@@ -806,9 +823,9 @@ export const DoorReceptionView: React.FC<DoorReceptionViewProps> = ({
             </div>
           </div>
 
-      {/* 4. SCANNED MEMBER STATUS PANEL (High Contrast & Compact) */}
+      {/* 4. SCANNED MEMBER STATUS PANEL (Non-Boxed Full Width Layout) */}
       {scannedMember && (
-        <div className="rounded-2xl bg-[#140E12] border-2 border-[#F5CE76]/60 shadow-2xl p-4 sm:p-7 relative overflow-hidden transition-all animate-fadeIn">
+        <div className="w-full border-t-2 border-[#F5CE76]/40 bg-[#120A0E]/80 backdrop-blur-sm p-3.5 sm:p-5 relative overflow-hidden transition-all animate-fadeIn rounded-xl">
           {/* Close Panel Button */}
           <button
             onClick={() => setScannedMember(null)}

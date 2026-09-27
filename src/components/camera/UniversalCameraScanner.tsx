@@ -109,8 +109,8 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
     resetLiveness,
   } = useFaceRecognition();
 
-  // Mode: 'hands_free_face' (default) | 'dual_qr_face' | 'qr_only'
-  const [accessMode, setAccessMode] = useState<AccessControlMode>('hands_free_face');
+  // Mode: 'qr_only' (default) | 'hands_free_face' (optional) | 'dual_qr_face'
+  const [accessMode, setAccessMode] = useState<AccessControlMode>('qr_only');
 
   // Cooldown map to prevent infinite scanning loops on the same face
   const lastScannedTimestampsRef = useRef<Map<string, number>>(new Map());
@@ -785,6 +785,19 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
           <div className="flex items-center gap-1 bg-[#140C11]/95 p-1 rounded-xl border border-[#F5CE76]/40 shadow-xl backdrop-blur-md overflow-x-auto max-w-[calc(100%-110px)] sm:max-w-none no-scrollbar">
             <button
               type="button"
+              onClick={() => setAccessMode('qr_only')}
+              className={`px-2.5 py-1.5 rounded-lg text-[10px] sm:text-[11px] font-mono font-bold transition-all flex items-center gap-1 shrink-0 cursor-pointer ${
+                accessMode === 'qr_only'
+                  ? 'bg-gradient-to-r from-[#8E0E24] to-[#4A0813] text-[#FFE194] border border-[#F5CE76]/60 shadow-md ring-1 ring-[#F5CE76]/40'
+                  : 'text-stone-300 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Scan className="w-3.5 h-3.5 text-[#F5CE76] shrink-0" />
+              <span className="whitespace-nowrap">QR Code (Default)</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => {
                 setAccessMode('hands_free_face');
                 resetLiveness();
@@ -796,20 +809,7 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
               }`}
             >
               <Eye className="w-3.5 h-3.5 text-[#FFE194] shrink-0" />
-              <span className="whitespace-nowrap">Face (Hands-Free)</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setAccessMode('qr_only')}
-              className={`px-2.5 py-1.5 rounded-lg text-[10px] sm:text-[11px] font-mono font-bold transition-all flex items-center gap-1 shrink-0 cursor-pointer ${
-                accessMode === 'qr_only'
-                  ? 'bg-gradient-to-r from-[#8E0E24] to-[#4A0813] text-[#FFE194] border border-[#F5CE76]/60 shadow-md ring-1 ring-[#F5CE76]/40'
-                  : 'text-stone-300 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <Scan className="w-3.5 h-3.5 text-[#F5CE76] shrink-0" />
-              <span className="whitespace-nowrap">QR Only</span>
+              <span className="whitespace-nowrap">Face Scan (Optional)</span>
             </button>
 
             <button

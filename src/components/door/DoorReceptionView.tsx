@@ -1420,6 +1420,23 @@ export const DoorReceptionView: React.FC<DoorReceptionViewProps> = ({
         currentStaff={currentStaff}
       />
 
+      {/* HANDHELD CAMERA SCANNER MODAL */}
+      <UniversalCameraScanner
+        mode="modal"
+        isOpen={showScannerModal}
+        onClose={() => setShowScannerModal(false)}
+        onMemberScanned={(member) => {
+          handleSelectMember(member);
+        }}
+        onAdmitDirectly={(member) => {
+          handleCheckInMember(member);
+          setShowScannerModal(false);
+        }}
+        currentStaff={currentStaff}
+        currentCustomerCount={stats.totalCustomers}
+        venueDate={currentDate}
+      />
+
       {/* APPLE WALLET PASS MODAL */}
       {walletTargetMember && (
         <AppleWalletPassModal

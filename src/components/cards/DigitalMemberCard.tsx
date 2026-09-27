@@ -9,13 +9,22 @@ import {
   AlertTriangle,
   User,
   ChevronDown,
+  ChevronUp,
   Camera,
   CheckCircle2,
   Mail,
   Send,
   Share2,
+  Calendar,
+  Building2,
+  Phone,
+  MapPin,
+  History,
+  Check,
+  Cpu,
+  UserCheck,
 } from 'lucide-react';
-import { Member } from '../../types';
+import { Member, VisitRecord } from '../../types';
 import { clubStore, subscribeToStore } from '../../services/storage';
 import { generateSignedMemberToken } from '../../services/security';
 import { UniversalCameraScanner } from '../camera/UniversalCameraScanner';
@@ -27,9 +36,11 @@ export const DigitalMemberCard: React.FC = () => {
   const [selectedMemberId, setSelectedMemberId] = useState<string>(
     members.find((m) => m.status === 'active')?.id || members[0]?.id || ''
   );
+  const [visits, setVisits] = useState<VisitRecord[]>(clubStore.getVisits());
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [secondsRemaining, setSecondsRemaining] = useState<number>(60);
   const [activeToken, setActiveToken] = useState<string>('');
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [showTestScanner, setShowTestScanner] = useState<boolean>(false);
   const [showAppleWalletModal, setShowAppleWalletModal] = useState<boolean>(false);
   const [showSendModal, setShowSendModal] = useState<boolean>(false);
@@ -38,11 +49,22 @@ export const DigitalMemberCard: React.FC = () => {
   useEffect(() => {
     const unsub = subscribeToStore(() => {
       setMembers(clubStore.getMembers());
+      setVisits(clubStore.getVisits());
     });
     return unsub;
   }, []);
 
   const activeMember = members.find((m) => m.id === selectedMemberId) || members[0];
+
+  // Filter recent visits for this active member
+  const memberVisits = visits
+    .filter(
+      (v) =>
+        (activeMember && v.memberId === activeMember.id) ||
+        (activeMember && v.memberNumber === activeMember.memberNumber) ||
+        (activeMember && v.memberName.toLowerCase() === activeMember.fullName.toLowerCase())
+    )
+    .sort((a, b) => new Date(b.checkInTime).getTime() - new Date(a.checkInTime).getTime());
 
   // Rotate QR code token every 60 seconds
   useEffect(() => {
@@ -84,6 +106,11 @@ export const DigitalMemberCard: React.FC = () => {
   }
 
   const memberSinceYear = new Date(activeMember.appliedAt).getFullYear();
+  const joinedFormattedDate = new Date(activeMember.appliedAt).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -104,7 +131,10 @@ export const DigitalMemberCard: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2">
           <select
             value={selectedMemberId}
-            onChange={(e) => setSelectedMemberId(e.target.value)}
+            onChange={(e) => {
+              setSelectedMemberId(e.target.value);
+              setIsExpanded(false);
+            }}
             className="px-3 py-2 bg-[#0A0608] border border-[#F5CE76]/40 rounded-xl text-xs sm:text-sm font-mono text-white focus:outline-none focus:border-[#FFE194]"
           >
             {members.map((m) => (
@@ -133,9 +163,9 @@ export const DigitalMemberCard: React.FC = () => {
         </div>
       </div>
 
-      {/* Luxury Digital Membership Card Container */}
+      {/* Luxury Digital Membership Card Container with Expandable State */}
       <div className="flex justify-center p-1 sm:p-4">
-        <div className="w-full max-w-sm rounded-[28px] bg-gradient-to-b from-[#8E0E24] via-[#4A0813] to-[#12080D] border-2 border-[#F5CE76] shadow-2xl p-6 sm:p-7 relative overflow-hidden text-center">
+        <div className="w-full max-w-sm sm:max-w-md rounded-[28px] bg-gradient-to-b from-[#8E0E24] via-[#4A0813] to-[#12080D] border-2 border-[#F5CE76] shadow-2xl p-6 sm:p-7 relative overflow-hidden text-center transition-all duration-300">
           {/* Subtle Art Deco Gold Background Ornaments */}
           <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#FFE194] to-transparent opacity-90" />
           <div className="absolute -top-12 -left-12 w-28 h-28 rounded-full border border-[#F5CE76]/25 pointer-events-none" />
@@ -253,6 +283,174 @@ export const DigitalMemberCard: React.FC = () => {
               />
             </div>
           </div>
+
+          {/* EXPAND PROFILE DETAILS TOGGLE BUTTON */}
+          <div className="mt-4 pt-3 border-t border-[#F5CE76]/25">
+            <button
+              type="button"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="w-full py-2.5 px-4 rounded-xl bg-[#1A0E13]/90 hover:bg-[#28141E] border border-[#F5CE76]/40 text-[#FFE194] font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-between transition-all cursor-pointer shadow-md"
+            >
+              <span className="flex items-center gap-1.5">
+                <UserCheck className="w-4 h-4 text-[#F5CE76]" />
+                <span>{isExpanded ? 'Hide Member Profile' : 'View Member Profile & Door History'}</span>
+              </span>
+              {isExpanded ? (
+                <ChevronUp className="w-4 h-4 text-[#F5CE76]" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-[#F5CE76]" />
+              )}
+            </button>
+          </div>
+
+          {/* EXPANDABLE MEMBER PROFILE & RECENT DOOR VISITS PANEL */}
+          {isExpanded && (
+            <div className="mt-4 text-left space-y-4 pt-4 border-t-2 border-dashed border-[#F5CE76]/30 animate-fadeIn">
+              {/* Full Profile Details Section */}
+              <div className="p-4 rounded-2xl bg-[#0F080C] border border-[#F5CE76]/30 space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-[#F5CE76]/20">
+                  <span className="text-xs font-mono uppercase tracking-wider text-[#FFE194] font-bold flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-[#F5CE76]" /> Member Profile Record
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
+                      activeMember.status === 'active'
+                        ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/40'
+                        : activeMember.status === 'waiting_48_hours'
+                        ? 'bg-amber-950 text-amber-300 border border-amber-500/40'
+                        : 'bg-rose-950 text-rose-300 border border-rose-500/40'
+                    }`}
+                  >
+                    {activeMember.status.replace('_', ' ')}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                  <div>
+                    <div className="text-[10px] font-mono text-stone-400 uppercase font-bold flex items-center gap-1">
+                      <Calendar className="w-3 h-3 text-[#F5CE76]" /> Date Joined
+                    </div>
+                    <div className="font-semibold text-white mt-0.5">{joinedFormattedDate}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-[10px] font-mono text-stone-400 uppercase font-bold flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-[#F5CE76]" /> Statutory Status
+                    </div>
+                    <div className="font-semibold text-white mt-0.5">
+                      {activeMember.status === 'waiting_48_hours'
+                        ? '48-Hour Waiting Period'
+                        : 'Eligible for Late Admissions'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[10px] font-mono text-stone-400 uppercase font-bold flex items-center gap-1">
+                      <Mail className="w-3 h-3 text-[#F5CE76]" /> Email Address
+                    </div>
+                    <div className="font-semibold text-white truncate mt-0.5">{activeMember.email}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-[10px] font-mono text-stone-400 uppercase font-bold flex items-center gap-1">
+                      <Phone className="w-3 h-3 text-[#F5CE76]" /> Contact Phone
+                    </div>
+                    <div className="font-semibold text-white mt-0.5">{activeMember.phone}</div>
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <div className="text-[10px] font-mono text-stone-400 uppercase font-bold flex items-center gap-1">
+                      <Building2 className="w-3 h-3 text-[#F5CE76]" /> Employer & Address
+                    </div>
+                    <div className="font-semibold text-white mt-0.5">
+                      {activeMember.hospitalityRole} at {activeMember.employer}
+                    </div>
+                    {activeMember.employerAddressOrWebsite && (
+                      <div className="text-[11px] text-stone-300 truncate mt-0.5">
+                        {activeMember.employerAddressOrWebsite}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Biometric Status Indicator */}
+                <div className="pt-2 border-t border-[#F5CE76]/15 flex items-center justify-between text-[11px]">
+                  <span className="font-mono text-stone-300 flex items-center gap-1.5">
+                    <Cpu className="w-3.5 h-3.5 text-[#F5CE76]" /> Express Biometric Enrollment
+                  </span>
+                  <span
+                    className={`font-mono font-bold ${
+                      activeMember.faceDescriptor && activeMember.faceDescriptor.length === 128
+                        ? 'text-emerald-400'
+                        : 'text-stone-400'
+                    }`}
+                  >
+                    {activeMember.faceDescriptor && activeMember.faceDescriptor.length === 128
+                      ? '✓ 128-D Vector Active'
+                      : 'Not Enrolled'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Recent Visits Activity Section */}
+              <div className="p-4 rounded-2xl bg-[#0F080C] border border-[#F5CE76]/30 space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-[#F5CE76]/20">
+                  <span className="text-xs font-mono uppercase tracking-wider text-[#FFE194] font-bold flex items-center gap-1.5">
+                    <History className="w-3.5 h-3.5 text-[#F5CE76]" /> Recent Door Visits
+                  </span>
+                  <span className="text-[10px] font-mono text-stone-300">
+                    {memberVisits.length} recorded entry{memberVisits.length === 1 ? '' : 'ies'}
+                  </span>
+                </div>
+
+                {memberVisits.length === 0 ? (
+                  <div className="p-3 text-center text-xs font-mono text-stone-400 bg-[#070406] rounded-xl border border-white/5">
+                    No recent door attendance records logged for {activeMember.fullName}.
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    {memberVisits.slice(0, 5).map((visit) => (
+                      <div
+                        key={visit.id}
+                        className="p-2.5 rounded-xl bg-[#070406] border border-[#F5CE76]/20 text-xs font-mono flex items-center justify-between gap-2"
+                      >
+                        <div>
+                          <div className="font-bold text-white flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+                            <span>{new Date(visit.checkInTime).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
+                            <span className="text-[#FFE194]">
+                              at {new Date(visit.checkInTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-stone-300 mt-0.5">
+                            Category: {visit.attendeeType.replace('_', ' ').toUpperCase()}
+                            {visit.guestNames && visit.guestNames.length > 0 && (
+                              <span> · {visit.guestNames.length} guest(s)</span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              visit.isCurrentlyInside
+                                ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/40'
+                                : 'bg-stone-800 text-stone-300'
+                            }`}
+                          >
+                            {visit.isCurrentlyInside ? 'INSIDE' : 'CHECKED OUT'}
+                          </span>
+                          <div className="text-[9px] text-stone-400 mt-0.5">
+                            Duty Staff: {visit.responsibleStaffName}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Disclaimer Footer */}
           <div className="mt-4 pt-3 border-t border-[#F5CE76]/25 text-[11px] text-stone-200 leading-tight font-medium">

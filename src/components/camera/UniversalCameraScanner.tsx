@@ -691,53 +691,53 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
       />
 
       {/* Floating Mode Switcher & HUD Bar */}
-      <div className="absolute top-0 inset-x-0 z-30 p-3 sm:p-4 bg-gradient-to-b from-black/90 via-black/50 to-transparent flex flex-col gap-2.5">
-        <div className="flex items-center justify-between">
-          {/* Mode Tabs: Dual / Hands-Free / QR */}
-          <div className="flex items-center gap-1 bg-[#140C11]/90 p-1 rounded-xl border border-[#F5CE76]/30 shadow-lg backdrop-blur-md">
-            <button
-              type="button"
-              onClick={() => {
-                setAccessMode('dual_qr_face');
-                resetLiveness();
-              }}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold transition-all flex items-center gap-1 cursor-pointer ${
-                accessMode === 'dual_qr_face'
-                  ? 'bg-gradient-to-r from-[#8E0E24] to-[#4A0813] text-[#FFE194] border border-[#F5CE76]/50 shadow-md'
-                  : 'text-stone-300 hover:text-white'
-              }`}
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-[#F5CE76]" />
-              <span>Dual (QR + Face)</span>
-            </button>
-
+      <div className="absolute top-0 inset-x-0 z-30 p-2.5 sm:p-3.5 bg-gradient-to-b from-black/95 via-black/60 to-transparent flex flex-col gap-2">
+        <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
+          {/* Mode Selector Tabs */}
+          <div className="flex items-center gap-1 bg-[#140C11]/95 p-1 rounded-xl border border-[#F5CE76]/40 shadow-xl backdrop-blur-md">
             <button
               type="button"
               onClick={() => {
                 setAccessMode('hands_free_face');
                 resetLiveness();
               }}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold transition-all flex items-center gap-1 cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                 accessMode === 'hands_free_face'
-                  ? 'bg-gradient-to-r from-[#8E0E24] to-[#4A0813] text-[#FFE194] border border-[#F5CE76]/50 shadow-md'
-                  : 'text-stone-300 hover:text-white'
+                  ? 'bg-gradient-to-r from-[#8E0E24] to-[#4A0813] text-[#FFE194] border border-[#F5CE76]/60 shadow-md ring-1 ring-[#F5CE76]/40'
+                  : 'text-stone-300 hover:text-white hover:bg-white/5'
               }`}
             >
               <Eye className="w-3.5 h-3.5 text-[#FFE194]" />
-              <span>Hands-Free Express</span>
+              <span>Face Only (Hands-Free)</span>
             </button>
 
             <button
               type="button"
               onClick={() => setAccessMode('qr_only')}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold transition-all flex items-center gap-1 cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                 accessMode === 'qr_only'
-                  ? 'bg-gradient-to-r from-[#8E0E24] to-[#4A0813] text-[#FFE194] border border-[#F5CE76]/50 shadow-md'
-                  : 'text-stone-300 hover:text-white'
+                  ? 'bg-gradient-to-r from-[#8E0E24] to-[#4A0813] text-[#FFE194] border border-[#F5CE76]/60 shadow-md ring-1 ring-[#F5CE76]/40'
+                  : 'text-stone-300 hover:text-white hover:bg-white/5'
               }`}
             >
               <Scan className="w-3.5 h-3.5 text-[#F5CE76]" />
-              <span>QR Only</span>
+              <span>QR Code Only</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setAccessMode('dual_qr_face');
+                resetLiveness();
+              }}
+              className={`px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                accessMode === 'dual_qr_face'
+                  ? 'bg-gradient-to-r from-[#8E0E24] to-[#4A0813] text-[#FFE194] border border-[#F5CE76]/60 shadow-md ring-1 ring-[#F5CE76]/40'
+                  : 'text-stone-300 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-[#F5CE76]" />
+              <span>Dual (QR + Face)</span>
             </button>
           </div>
 

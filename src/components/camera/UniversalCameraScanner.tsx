@@ -884,26 +884,14 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
         </div>
 
         {/* Live Status Sub-Bar */}
-        <div className="flex items-center justify-between text-[9px] sm:text-[10px] font-mono text-[#FFE194] flex-wrap gap-1">
-          <div className="flex items-center gap-1">
-            <Cpu className="w-3 h-3 text-emerald-400" />
-            <span>Face-API: {isModelLoaded ? 'READY' : 'LOADING...'}</span>
+        <div className="flex items-center justify-between text-[10px] sm:text-xs font-mono text-[#FFE194] flex-wrap gap-1">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+            <span className="font-bold">QR OPTICAL SCANNER: READY</span>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            {/* TrueDepth LiDAR Badge */}
-            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-cyan-950 border border-cyan-400/60 text-cyan-200 font-bold shadow-sm">
-              <Sparkles className="w-2.5 h-2.5 text-cyan-300 animate-pulse" />
-              <span>LiDAR 3D: ACTIVE</span>
-            </div>
-
-            {lastLiveResult && lastLiveResult.detected && (
-              <span className={lastLiveResult.lidarDepth?.is3DDisparityValid ? 'text-cyan-300 font-bold' : 'text-amber-300'}>
-                {lastLiveResult.lidarDepth?.is3DDisparityValid
-                  ? `Z: ${lastLiveResult.lidarDepth.depthDisparityMm}mm`
-                  : '3D MESH...'}
-              </span>
-            )}
+          <div className="text-[#F5CE76] font-bold">
+            23 FRITH STREET SOHO
           </div>
         </div>
       </div>
@@ -926,48 +914,6 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
         )}
         {scanFlash === 'failure' && (
           <div className="absolute inset-0 z-30 pointer-events-none border-4 border-rose-500 bg-rose-500/25 animate-pulse" />
-        )}
-
-        {/* Face Bounding Box & High-Tech LiDAR 3D Mesh Overlay */}
-        {lastLiveResult && lastLiveResult.box && (
-          <div
-            style={{
-              left: `${lastLiveResult.box.x}px`,
-              top: `${lastLiveResult.box.y}px`,
-              width: `${lastLiveResult.box.width}px`,
-              height: `${lastLiveResult.box.height}px`,
-            }}
-            className="absolute z-20 pointer-events-none border-2 border-emerald-400 rounded-2xl shadow-[0_0_35px_rgba(52,211,153,0.9)] transition-all duration-150 bg-emerald-500/10"
-          >
-            {/* Corner Reticles */}
-            <div className="absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-emerald-300" />
-            <div className="absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-emerald-300" />
-            <div className="absolute -bottom-1 -left-1 w-4 h-4 border-b-2 border-l-2 border-emerald-300" />
-            <div className="absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-emerald-300" />
-
-            {/* TrueDepth LiDAR 3D Point Cloud Nodes */}
-            <div className="absolute top-[28%] left-[26%] w-2 h-2 rounded-full bg-cyan-300 animate-ping shadow-[0_0_10px_#22d3ee]" />
-            <div className="absolute top-[28%] right-[26%] w-2 h-2 rounded-full bg-cyan-300 animate-ping shadow-[0_0_10px_#22d3ee]" />
-            <div className="absolute top-[48%] left-[48%] w-2 h-2 rounded-full bg-emerald-300 shadow-[0_0_8px_#34D399]" />
-            <div className="absolute bottom-[28%] left-[34%] w-3 h-1 rounded-full bg-cyan-400/90" />
-
-            {/* LiDAR Point Cloud Grid Matrix */}
-            <div className="absolute inset-2 grid grid-cols-5 grid-rows-5 gap-2 opacity-60">
-              {Array.from({ length: 25 }).map((_, i) => (
-                <div key={i} className="w-1 h-1 rounded-full bg-cyan-300/70 m-auto animate-pulse" />
-              ))}
-            </div>
-
-            {/* Mesh Connecting Vector Lines */}
-            <div className="absolute inset-x-2 top-1/2 h-px bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent" />
-            <div className="absolute inset-y-2 left-1/2 w-px bg-gradient-to-b from-transparent via-emerald-400/50 to-transparent" />
-
-            {/* Vector Readout Tag */}
-            <div className="absolute -top-7 left-0 bg-gradient-to-r from-cyan-950 via-emerald-950 to-black text-emerald-300 font-mono text-[9px] px-2.5 py-1 rounded-lg border border-cyan-400/60 uppercase font-extrabold tracking-widest shadow-xl flex items-center gap-2 whitespace-nowrap">
-              <span className="w-2 h-2 rounded-full bg-cyan-300 animate-ping" />
-              <span>LiDAR 3D DEPTH: {lastLiveResult.lidarDepth?.depthDisparityMm || 52}mm [VOLUMETRIC VERIFIED]</span>
-            </div>
-          </div>
         )}
 
         {/* Scanning Reticle & Radar Sweep */}
@@ -1010,49 +956,38 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
               <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#F5CE76_1px,transparent_1px)] [background-size:16px_16px]" />
             </div>
 
-            {/* HUD Status Floating Pill */}
-            <div className="absolute bottom-2 xs:bottom-3 sm:bottom-5 inset-x-2 flex justify-center pointer-events-none">
-              <div className="px-2.5 py-1 sm:px-4 sm:py-2 rounded-full bg-gradient-to-r from-black/95 via-[#1A1116]/95 to-black/95 backdrop-blur-md text-[#FFE194] text-[10px] sm:text-xs font-mono border border-[#F5CE76]/60 shadow-2xl tracking-wider flex items-center gap-1.5 max-w-[95%] truncate">
-                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-400 animate-ping shrink-0" />
-                <span className="truncate">
-                  {accessMode === 'hands_free_face'
-                    ? 'EXPRESS SCAN: ALIGN FACE'
-                    : accessMode === 'dual_qr_face'
-                    ? 'DUAL MODE: PASS + FACE'
-                    : 'SCAN MEMBER QR PASS'}
-                </span>
-              </div>
-            </div>
+        {/* HUD Status Floating Pill */}
+        <div className="absolute bottom-2 xs:bottom-3 sm:bottom-5 inset-x-2 flex justify-center pointer-events-none">
+          <div className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-gradient-to-r from-black/95 via-[#1A1116]/95 to-black/95 backdrop-blur-md text-[#FFE194] text-xs sm:text-sm font-mono border border-[#F5CE76]/60 shadow-2xl tracking-wider flex items-center gap-2 max-w-[95%] truncate">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping shrink-0" />
+            <span className="truncate font-bold">
+              SCAN MEMBER QR PASS
+            </span>
+          </div>
+        </div>
           </div>
         )}
 
-        {/* Scanned Result Banner */}
+        {/* Minimal Scanned Result Banner - Displayed at Top */}
         {scannedResult && (
-          <div className="absolute inset-x-3 bottom-3 z-30 animate-fadeIn">
+          <div className="absolute inset-x-3 top-3 z-30 animate-fadeIn">
             {scannedResult.isValid && scannedResult.member ? (
-              <div className="p-3.5 rounded-2xl bg-[#140D12]/98 border-2 border-emerald-500 shadow-2xl backdrop-blur-md flex items-center justify-between gap-3">
+              <div className="p-3 rounded-2xl bg-[#140D12]/98 border-2 border-emerald-500 shadow-2xl backdrop-blur-md flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-11 h-11 rounded-xl bg-emerald-950/90 border border-emerald-500 flex items-center justify-center text-emerald-400 shrink-0">
-                    <CheckCircle2 className="w-6 h-6" />
+                  <div className="w-10 h-10 rounded-xl bg-emerald-950/90 border border-emerald-500 flex items-center justify-center text-emerald-400 shrink-0">
+                    <CheckCircle2 className="w-5 h-5" />
                   </div>
                   <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-400 font-bold">
-                        {scannedResult.verificationMode === 'hands_free_face'
-                          ? 'EXPRESS BIOMETRIC ENTRY'
-                          : 'DUAL VERIFIED PASS'}
+                    <div className="font-serif text-[#FFE194] text-base font-bold truncate">
+                      {scannedResult.member.fullName}
+                    </div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-xs font-mono text-emerald-300 font-bold">
+                        {scannedResult.member.memberNumber}
                       </span>
-                      {scannedResult.confidenceScore && (
-                        <span className="text-[10px] font-mono font-bold text-[#FFE194]">
-                          ({scannedResult.confidenceScore}% match)
-                        </span>
-                      )}
-                    </div>
-                    <div className="font-serif text-[#FFE194] text-lg font-bold truncate">
-                      Welcome back, {scannedResult.member.fullName}!
-                    </div>
-                    <div className="text-xs font-mono text-emerald-300 truncate mt-0.5">
-                      {scannedResult.member.memberNumber} · {scannedResult.reason}
+                      <span className="text-[10px] font-mono font-extrabold uppercase text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/40">
+                        GRANTED
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -1066,9 +1001,9 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
                       }
                       if (mode === 'modal' && onClose) onClose();
                     }}
-                    className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-bold uppercase tracking-wider shrink-0 transition-colors shadow-lg active:scale-95 cursor-pointer"
+                    className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-bold uppercase tracking-wider shrink-0 transition-colors shadow-lg active:scale-95 cursor-pointer"
                   >
-                    Release Door
+                    Admit
                   </button>
                 )}
               </div>
@@ -1079,11 +1014,16 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
                     <XCircle className="w-5 h-5" />
                   </div>
                   <div className="min-w-0">
-                    <div className="text-[11px] font-mono uppercase tracking-wider text-rose-400 font-bold">
-                      VERIFICATION BLOCKED
+                    <div className="font-serif text-[#FFE194] text-base font-bold truncate">
+                      {scannedResult.member?.fullName || 'Unrecognized Member'}
                     </div>
-                    <div className="text-xs text-rose-200 mt-0.5 truncate">
-                      {scannedResult.reason || 'Verification rejected.'}
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-xs font-mono text-rose-300 font-bold">
+                        {scannedResult.member?.memberNumber || 'N/A'}
+                      </span>
+                      <span className="text-[10px] font-mono font-extrabold uppercase text-rose-400 bg-rose-950/80 px-2 py-0.5 rounded border border-rose-500/40">
+                        DENIED
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -1099,7 +1039,7 @@ export const UniversalCameraScanner: React.FC<UniversalCameraScannerProps> = ({
                     }}
                     className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-black font-mono text-[11px] font-bold shrink-0 cursor-pointer"
                   >
-                    Staff Override
+                    Override
                   </button>
                 )}
               </div>

@@ -13,6 +13,8 @@ import {
   Send,
   Sparkles,
   QrCode,
+  Lock,
+  Eye,
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import { Member } from '../../types';
@@ -30,6 +32,7 @@ export interface SendPassModalProps {
   onClose: () => void;
   qrToken?: string;
   onOpenAppleWalletModal?: () => void;
+  onPreviewStandalonePass?: (memberNumber: string) => void;
 }
 
 type TabType = 'wallet' | 'email' | 'sms' | 'link';
@@ -40,6 +43,7 @@ export const SendPassModal: React.FC<SendPassModalProps> = ({
   onClose,
   qrToken,
   onOpenAppleWalletModal,
+  onPreviewStandalonePass,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('wallet');
   const [emailInput, setEmailInput] = useState<string>(member.email || '');
@@ -58,8 +62,8 @@ export const SendPassModal: React.FC<SendPassModalProps> = ({
       QRCode.toDataURL(passUrl, {
         errorCorrectionLevel: 'M',
         margin: 1,
-        width: 220,
-        color: { dark: '#000000', light: '#FFFFFF' },
+        width: 240,
+        color: { dark: '#1F1116', light: '#FFFFFF' },
       }).then(setQrWalletCodeUrl).catch(console.error);
     }
   }, [isOpen, passUrl]);
@@ -82,7 +86,6 @@ export const SendPassModal: React.FC<SendPassModalProps> = ({
   const handleSendEmail = () => {
     setIsSending(true);
     setTimeout(() => {
-      // Record audit log
       clubStore.addAuditLog({
         actorId: currentStaff.id,
         actorName: currentStaff.name,
@@ -105,8 +108,8 @@ export const SendPassModal: React.FC<SendPassModalProps> = ({
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `Jonny's Soho - Member Pass (${member.memberNumber})`,
-          text: `Digital membership pass for ${member.fullName} at Jonny's Soho (23 Frith Street).`,
+          title: `Amica Soho - Member Pass (${member.memberNumber})`,
+          text: `Digital membership pass for ${member.fullName} at Amica Soho (23 Frith Street).`,
           url: passUrl,
         });
       } catch (err) {
@@ -118,7 +121,7 @@ export const SendPassModal: React.FC<SendPassModalProps> = ({
   };
 
   const handleOpenMailClient = () => {
-    const subject = encodeURIComponent(`JONNY'S SOHO - Official Digital Pass (${member.memberNumber})`);
+    const subject = encodeURIComponent(`AMICA SOHO - Official Digital Pass (${member.memberNumber})`);
     const body = encodeURIComponent(formatPassSmsMessage(member));
     window.location.href = `mailto:${encodeURIComponent(emailInput)}?subject=${subject}&body=${body}`;
   };
@@ -130,91 +133,119 @@ export const SendPassModal: React.FC<SendPassModalProps> = ({
     window.open(url, '_blank');
   };
 
+  const handleLaunchPreview = () => {
+    if (onPreviewStandalonePass) {
+      onClose();
+      onPreviewStandalonePass(member.memberNumber);
+    } else {
+      window.open(passUrl, '_blank');
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-sm animate-fadeIn">
       <div
-        className="w-full max-w-lg rounded-2xl bg-[#120E11] border border-[#C6A052]/30 shadow-2xl flex flex-col overflow-hidden max-h-[90vh]"
+        className="w-full max-w-lg rounded-3xl bg-white border border-[#EDE7DF] shadow-2xl flex flex-col overflow-hidden max-h-[92vh] text-stone-900"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="px-6 py-4 bg-gradient-to-r from-[#2A0E18] to-[#140E12] border-b border-white/[0.08] flex items-center justify-between">
+        {/* Header - High Design Clean Luxury */}
+        <div className="px-6 py-5 bg-white border-b border-[#EDE7DF] flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#3B121E] border border-[#C6A052]/40 flex items-center justify-center text-[#C6A052]">
+            <div className="w-10 h-10 rounded-2xl bg-[#FFF5F6] border border-rose-200 flex items-center justify-center text-[#780C1E]">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <div className="font-serif text-lg font-bold text-white tracking-wide">
-                Send Member Pass
+              <div className="font-serif text-lg font-bold text-stone-900 tracking-tight">
+                Send Digital Pass
               </div>
-              <div className="font-mono text-[10px] text-[#C6A052] uppercase tracking-wider">
-                {member.fullName} · {member.memberNumber}
+              <div className="text-xs font-mono font-medium text-stone-500">
+                {member.fullName} · <span className="text-[#780C1E] font-bold">{member.memberNumber}</span>
               </div>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-white/60 hover:text-white transition-all"
+            className="p-2 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+            aria-label="Close dialog"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
+        {/* Security Isolation Notice Pill */}
+        <div className="px-6 py-2.5 bg-[#FAF8F5] border-b border-[#EDE7DF] flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 text-stone-600">
+            <Lock className="w-4 h-4 text-[#780C1E] shrink-0" />
+            <span>
+              <strong>Pass-Only Isolated:</strong> Recipient sees only their pass. Internal operational tools remain locked.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={handleLaunchPreview}
+            className="shrink-0 px-2.5 py-1 rounded-lg bg-white border border-[#EDE7DF] text-[11px] font-semibold text-[#780C1E] hover:bg-[#FAF8F5] flex items-center gap-1 cursor-pointer shadow-2xs"
+          >
+            <Eye className="w-3 h-3" />
+            <span>Preview</span>
+          </button>
+        </div>
+
         {/* Tab Selection */}
-        <div className="flex border-b border-white/[0.08] bg-black/40 px-6 pt-3 gap-2 overflow-x-auto">
+        <div className="flex border-b border-[#EDE7DF] bg-white px-6 pt-3 gap-2 overflow-x-auto">
           <button
             onClick={() => setActiveTab('wallet')}
-            className={`flex items-center gap-2 pb-3 px-3 font-mono text-xs uppercase tracking-wider transition-all border-b-2 whitespace-nowrap ${
+            className={`flex items-center gap-2 pb-3 px-3 text-xs font-semibold tracking-wide transition-all border-b-2 whitespace-nowrap cursor-pointer ${
               activeTab === 'wallet'
-                ? 'border-[#C6A052] text-[#C6A052] font-bold'
-                : 'border-transparent text-white/50 hover:text-white/80'
+                ? 'border-[#780C1E] text-[#780C1E] font-bold'
+                : 'border-transparent text-stone-500 hover:text-stone-900'
             }`}
           >
             <Smartphone className="w-4 h-4" />
-            Apple Wallet (.pkpass)
+            <span>Apple Wallet (.pkpass)</span>
           </button>
 
           <button
             onClick={() => setActiveTab('email')}
-            className={`flex items-center gap-2 pb-3 px-3 font-mono text-xs uppercase tracking-wider transition-all border-b-2 whitespace-nowrap ${
+            className={`flex items-center gap-2 pb-3 px-3 text-xs font-semibold tracking-wide transition-all border-b-2 whitespace-nowrap cursor-pointer ${
               activeTab === 'email'
-                ? 'border-[#C6A052] text-[#C6A052] font-bold'
-                : 'border-transparent text-white/50 hover:text-white/80'
+                ? 'border-[#780C1E] text-[#780C1E] font-bold'
+                : 'border-transparent text-stone-500 hover:text-stone-900'
             }`}
           >
             <Mail className="w-4 h-4" />
-            Email Pass
+            <span>Email Pass</span>
           </button>
 
           <button
             onClick={() => setActiveTab('sms')}
-            className={`flex items-center gap-2 pb-3 px-3 font-mono text-xs uppercase tracking-wider transition-all border-b-2 whitespace-nowrap ${
+            className={`flex items-center gap-2 pb-3 px-3 text-xs font-semibold tracking-wide transition-all border-b-2 whitespace-nowrap cursor-pointer ${
               activeTab === 'sms'
-                ? 'border-[#C6A052] text-[#C6A052] font-bold'
-                : 'border-transparent text-white/50 hover:text-white/80'
+                ? 'border-[#780C1E] text-[#780C1E] font-bold'
+                : 'border-transparent text-stone-500 hover:text-stone-900'
             }`}
           >
             <MessageSquare className="w-4 h-4" />
-            SMS & WhatsApp
+            <span>SMS & WhatsApp</span>
           </button>
 
           <button
             onClick={() => setActiveTab('link')}
-            className={`flex items-center gap-2 pb-3 px-3 font-mono text-xs uppercase tracking-wider transition-all border-b-2 whitespace-nowrap ${
+            className={`flex items-center gap-2 pb-3 px-3 text-xs font-semibold tracking-wide transition-all border-b-2 whitespace-nowrap cursor-pointer ${
               activeTab === 'link'
-                ? 'border-[#C6A052] text-[#C6A052] font-bold'
-                : 'border-transparent text-white/50 hover:text-white/80'
+                ? 'border-[#780C1E] text-[#780C1E] font-bold'
+                : 'border-transparent text-stone-500 hover:text-stone-900'
             }`}
           >
             <Share2 className="w-4 h-4" />
-            Pass Link
+            <span>Direct Link</span>
           </button>
         </div>
 
         {/* Tab Content Body */}
-        <div className="p-6 overflow-y-auto space-y-5 text-sm flex-1">
+        <div className="p-6 overflow-y-auto space-y-4 text-sm flex-1 bg-[#FAF8F5]/40">
           {sendSuccessMessage && (
-            <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-xs flex items-center gap-2.5 animate-fadeIn">
-              <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+            <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center gap-2.5 animate-fadeIn">
+              <CheckCircle2 className="w-5 h-5 flex-shrink-0 text-emerald-600" />
               <span>{sendSuccessMessage}</span>
             </div>
           )}
@@ -222,9 +253,9 @@ export const SendPassModal: React.FC<SendPassModalProps> = ({
           {/* TAB 1: APPLE WALLET */}
           {activeTab === 'wallet' && (
             <div className="space-y-4">
-              <div className="p-4 rounded-xl bg-black/40 border border-white/[0.08] flex flex-col sm:flex-row items-center gap-5">
+              <div className="p-5 rounded-2xl bg-white border border-[#EDE7DF] shadow-xs flex flex-col sm:flex-row items-center gap-5">
                 {qrWalletCodeUrl && (
-                  <div className="p-2.5 bg-white rounded-xl shadow-lg flex-shrink-0">
+                  <div className="p-3 bg-white rounded-2xl border border-[#EDE7DF] shadow-xs flex-shrink-0">
                     <img
                       src={qrWalletCodeUrl}
                       alt="Wallet Link QR"
@@ -233,13 +264,13 @@ export const SendPassModal: React.FC<SendPassModalProps> = ({
                   </div>
                 )}
                 <div className="space-y-2 text-center sm:text-left">
-                  <div className="font-serif text-base font-bold text-white">
+                  <div className="font-serif text-base font-bold text-stone-900">
                     Scan with iPhone Camera
                   </div>
-                  <p className="text-xs text-stone-300 leading-relaxed">
-                    Point any iPhone or iPad camera at this QR code to instantly open the member&apos;s digital pass and trigger the native <strong>Apple Wallet</strong> sheet.
+                  <p className="text-xs text-stone-500 leading-relaxed font-medium">
+                    Point iPhone camera at this code to open the member&apos;s isolated digital pass and trigger the native <strong>Apple Wallet</strong> sheet.
                   </p>
-                  <div className="inline-flex items-center gap-1.5 text-[11px] font-mono text-[#C6A052]">
+                  <div className="inline-flex items-center gap-1.5 text-[11px] font-mono text-[#780C1E] font-semibold">
                     <ShieldCheck className="w-3.5 h-3.5" />
                     <span>Pass Type: pass.club.jonnys.soho</span>
                   </div>
@@ -247,23 +278,23 @@ export const SendPassModal: React.FC<SendPassModalProps> = ({
               </div>
 
               {/* Download PKPASS button */}
-              <div className="pt-2">
+              <div className="pt-1">
                 <button
                   onClick={() => downloadAppleWalletPass(member)}
-                  className="w-full flex items-center justify-center gap-3 px-5 py-3.5 rounded-xl bg-black border border-white/20 hover:border-[#C6A052] transition-all shadow-lg active:scale-[0.98]"
+                  className="w-full flex items-center justify-center gap-3 px-5 py-3.5 rounded-2xl bg-black hover:bg-neutral-900 text-white transition-all shadow-sm active:scale-98 cursor-pointer"
                 >
-                  <Download className="w-5 h-5 text-[#C6A052]" />
+                  <Download className="w-5 h-5 text-white" />
                   <div className="text-left">
-                    <div className="font-mono text-[9px] text-white/50 uppercase tracking-wider">
+                    <div className="text-[10px] uppercase font-mono text-stone-400">
                       PassKit Package (.pkpass)
                     </div>
-                    <div className="font-sans font-bold text-sm text-white">
+                    <div className="font-semibold text-sm text-white">
                       Download Apple Wallet Pass File
                     </div>
                   </div>
                 </button>
-                <div className="font-mono text-[10px] text-white/40 text-center mt-2">
-                  Opens directly in Apple Wallet on iPhone, iPad, Apple Watch, and macOS.
+                <div className="text-[11px] text-stone-400 text-center mt-2 font-mono">
+                  Opens directly in Apple Wallet on iPhone, iPad, Apple Watch, and Mac.
                 </div>
               </div>
             </div>
@@ -273,7 +304,7 @@ export const SendPassModal: React.FC<SendPassModalProps> = ({
           {activeTab === 'email' && (
             <div className="space-y-4">
               <div>
-                <label className="block font-mono text-[11px] text-[#C6A052] uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-1.5">
                   Recipient Email Address
                 </label>
                 <div className="flex gap-2">
@@ -282,38 +313,38 @@ export const SendPassModal: React.FC<SendPassModalProps> = ({
                     value={emailInput}
                     onChange={(e) => setEmailInput(e.target.value)}
                     placeholder="member@example.com"
-                    className="flex-1 px-4 py-2.5 rounded-xl bg-black/50 border border-white/10 text-white font-mono text-sm focus:outline-none focus:border-[#C6A052]"
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-white border border-[#EDE7DF] text-stone-900 text-sm focus:outline-none focus:border-[#780C1E]"
                   />
                   <button
                     onClick={handleSendEmail}
                     disabled={isSending || !emailInput}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#C6A052] hover:bg-[#D4B062] text-black font-bold text-xs uppercase tracking-wider transition-all disabled:opacity-50"
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#780C1E] hover:bg-[#8E1026] text-white font-semibold text-xs uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer shadow-xs"
                   >
                     <Send className="w-4 h-4" />
-                    {isSending ? 'Sending...' : 'Send'}
+                    <span>{isSending ? 'Sending...' : 'Send'}</span>
                   </button>
                 </div>
               </div>
 
               {/* Preview of Email Contents */}
-              <div className="p-4 rounded-xl bg-black/40 border border-white/[0.08] space-y-2.5">
+              <div className="p-4 rounded-2xl bg-white border border-[#EDE7DF] shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-mono text-[10px] text-white/40 uppercase">Subject:</span>
-                  <span className="font-mono text-white/80 text-xs">
-                    JONNY&apos;S SOHO - Official Digital Pass ({member.memberNumber})
+                  <span className="text-[10px] uppercase font-mono text-stone-400">Subject:</span>
+                  <span className="font-medium text-stone-800 text-xs truncate max-w-[280px]">
+                    AMICA SOHO - Official Digital Pass ({member.memberNumber})
                   </span>
                 </div>
-                <div className="text-xs text-stone-300 leading-relaxed border-t border-white/[0.06] pt-2">
-                  Includes personalized invitation, verified member number, Westminster Statutory Rules (01:00 AM strict cutoff, 01:30 AM guest departure), and direct <strong>Add to Apple Wallet</strong> action.
+                <div className="text-xs text-stone-500 leading-relaxed border-t border-[#F0EBE3] pt-2">
+                  Includes isolated member pass link, member number, Westminster Statutory Rules (01:00 AM strict cutoff, 01:30 AM guest departure), and direct <strong>Add to Apple Wallet</strong> action.
                 </div>
 
                 <div className="pt-2 flex justify-end">
                   <button
                     onClick={handleOpenMailClient}
-                    className="flex items-center gap-1.5 text-xs text-[#C6A052] hover:underline font-mono"
+                    className="flex items-center gap-1.5 text-xs text-[#780C1E] hover:underline font-semibold cursor-pointer"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
-                    Open in default mail client
+                    <span>Open in default mail client</span>
                   </button>
                 </div>
               </div>
@@ -324,7 +355,7 @@ export const SendPassModal: React.FC<SendPassModalProps> = ({
           {activeTab === 'sms' && (
             <div className="space-y-4">
               <div>
-                <label className="block font-mono text-[11px] text-[#C6A052] uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-1.5">
                   Mobile Phone Number
                 </label>
                 <input
@@ -332,12 +363,12 @@ export const SendPassModal: React.FC<SendPassModalProps> = ({
                   value={phoneInput}
                   onChange={(e) => setPhoneInput(e.target.value)}
                   placeholder="+44 7700 900077"
-                  className="w-full px-4 py-2.5 rounded-xl bg-black/50 border border-white/10 text-white font-mono text-sm focus:outline-none focus:border-[#C6A052]"
+                  className="w-full px-4 py-2.5 rounded-xl bg-white border border-[#EDE7DF] text-stone-900 font-mono text-sm focus:outline-none focus:border-[#780C1E]"
                 />
               </div>
 
               {/* SMS Text Preview */}
-              <div className="p-3.5 rounded-xl bg-black/40 border border-white/[0.08] font-mono text-xs text-stone-300 whitespace-pre-wrap leading-relaxed">
+              <div className="p-4 rounded-2xl bg-white border border-[#EDE7DF] font-mono text-xs text-stone-700 whitespace-pre-wrap leading-relaxed shadow-xs">
                 {formatPassSmsMessage(member)}
               </div>
 
@@ -345,18 +376,18 @@ export const SendPassModal: React.FC<SendPassModalProps> = ({
               <div className="grid grid-cols-2 gap-2.5">
                 <button
                   onClick={handleOpenWhatsApp}
-                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#25D366]/20 hover:bg-[#25D366]/30 text-[#25D366] border border-[#25D366]/40 text-xs font-bold tracking-wide transition-all"
+                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold tracking-wide transition-all cursor-pointer shadow-xs"
                 >
                   <MessageSquare className="w-4 h-4" />
-                  WhatsApp
+                  <span>WhatsApp</span>
                 </button>
 
                 <button
                   onClick={handleCopySmsText}
-                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-white border border-white/10 text-xs font-semibold tracking-wide transition-all"
+                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white hover:bg-[#FAF8F5] border border-[#EDE7DF] text-stone-800 text-xs font-semibold tracking-wide transition-all cursor-pointer shadow-xs"
                 >
-                  {isCopied ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                  {isCopied ? 'Copied!' : 'Copy Text'}
+                  {isCopied ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                  <span>{isCopied ? 'Copied!' : 'Copy Text'}</span>
                 </button>
               </div>
             </div>
@@ -366,47 +397,57 @@ export const SendPassModal: React.FC<SendPassModalProps> = ({
           {activeTab === 'link' && (
             <div className="space-y-4">
               <div>
-                <label className="block font-mono text-[11px] text-[#C6A052] uppercase tracking-wider mb-1.5">
-                  Direct Pass Access URL
+                <label className="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-1.5">
+                  Direct Isolated Pass URL
                 </label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     readOnly
                     value={passUrl}
-                    className="flex-1 px-4 py-2.5 rounded-xl bg-black/50 border border-white/10 text-stone-300 font-mono text-xs focus:outline-none"
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-white border border-[#EDE7DF] text-stone-700 font-mono text-xs focus:outline-none select-all"
                   />
                   <button
                     onClick={handleCopyLink}
-                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/[0.08] hover:bg-white/[0.12] text-white font-mono text-xs font-semibold tracking-wider transition-all"
+                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white hover:bg-[#FAF8F5] border border-[#EDE7DF] text-stone-800 font-mono text-xs font-semibold tracking-wider transition-all cursor-pointer shadow-xs"
                   >
-                    {copiedLink ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                    {copiedLink ? 'Copied' : 'Copy'}
+                    {copiedLink ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                    <span>{copiedLink ? 'Copied' : 'Copy'}</span>
                   </button>
                 </div>
               </div>
 
-              <button
-                onClick={handleNativeShare}
-                className="w-full flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl bg-[#C6A052] hover:bg-[#D4B062] text-black font-bold text-xs uppercase tracking-wider transition-all shadow-md active:scale-[0.98]"
-              >
-                <Share2 className="w-4 h-4" />
-                Open Native Share Sheet (AirDrop / Messages)
-              </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <button
+                  onClick={handleNativeShare}
+                  className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#780C1E] hover:bg-[#8E1026] text-white font-semibold text-xs uppercase tracking-wider transition-all shadow-xs active:scale-98 cursor-pointer"
+                >
+                  <Share2 className="w-4 h-4" />
+                  <span>Share Sheet</span>
+                </button>
 
-              <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06] text-xs text-stone-400 leading-relaxed font-mono">
-                Anyone opening this unique member link can view their live rotating security pass and tap &quot;Add to Apple Wallet&quot; directly to their device.
+                <button
+                  onClick={handleLaunchPreview}
+                  className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-white hover:bg-[#FAF8F5] border border-[#EDE7DF] text-stone-800 font-semibold text-xs uppercase tracking-wider transition-all shadow-xs active:scale-98 cursor-pointer"
+                >
+                  <Eye className="w-4 h-4 text-[#780C1E]" />
+                  <span>Preview Pass Only</span>
+                </button>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200 text-xs text-amber-900 leading-relaxed font-medium">
+                🔒 When anyone opens this link, the system locks into <strong>Standalone Pass Mode</strong>. It displays only their rotating pass barcode, member name, and Apple Wallet button. The operational dashboard, admissions queue, door reception, and incident registers are strictly inaccessible.
               </div>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3.5 bg-black/60 border-t border-white/[0.08] flex items-center justify-between text-xs text-white/40 font-mono">
-          <span>Jonny&apos;s Soho · 23 Frith Street</span>
+        <div className="px-6 py-3.5 bg-white border-t border-[#EDE7DF] flex items-center justify-between text-xs text-stone-400 font-mono">
+          <span>Amica Soho · 23 Frith Street</span>
           <button
             onClick={onClose}
-            className="text-stone-300 hover:text-white underline font-sans"
+            className="text-stone-600 hover:text-stone-900 font-sans font-medium underline cursor-pointer"
           >
             Close
           </button>

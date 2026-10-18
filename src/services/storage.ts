@@ -17,6 +17,10 @@ import {
   AuditEvent,
   UserRole,
   DoorLog,
+  BookingRecord,
+  TableItem,
+  BookingStatus,
+  TableStatus,
 } from '../types';
 
 import {
@@ -30,6 +34,11 @@ import {
   INITIAL_INCIDENTS,
   INITIAL_AUDIT_LOGS,
 } from '../data/mockSeed';
+
+import {
+  INITIAL_BOOKINGS,
+  INITIAL_TABLES,
+} from '../data/mockBookings';
 
 import {
   saveMemberToDb,
@@ -54,6 +63,8 @@ const STORAGE_KEYS = {
   INCIDENTS: 'jonnys_incidents_v2',
   AUDIT_LOGS: 'jonnys_audit_logs_v2',
   DOOR_LOGS: 'jonnys_door_logs_v2',
+  BOOKINGS: 'amica_bookings_v2',
+  TABLES: 'amica_tables_v2',
   SIMULATED_TIME_OFFSET_MS: 'jonnys_simulated_time_offset_ms',
   IS_TIME_SIMULATION_ACTIVE: 'jonnys_is_time_simulation_active',
 };
@@ -552,6 +563,56 @@ export const clubStore = {
     notify();
     saveDoorLogToDb(newLog);
     return newLog;
+  },
+
+  // Bookings & Reservations
+  getBookings(): BookingRecord[] {
+    return getItem(STORAGE_KEYS.BOOKINGS, INITIAL_BOOKINGS);
+  },
+
+  getBookingById(id: string): BookingRecord | undefined {
+    return this.getBookings().find((b) => b.id === id);
+  },
+
+  saveBooking(booking: BookingRecord): void {
+    const bookings = this.getBookings();
+    const idx = bookings.findIndex((b) => b.id === booking.id);
+    if (idx >= 0) {
+      bookings[idx] = booking;
+    } else {
+      bookings.unshift(booking);
+    }
+    setItem(STORAGE_KEYS.BOOKINGS, bookings);
+    notify();
+  },
+
+  updateBookingStatus(id: string, status: BookingStatus): void {
+    const bookings = this.getBookings();
+    const idx = bookings.findIndex((b) => b.id === id);
+    if (idx >= 0) {
+      bookings[idx].status = status;
+      setItem(STORAGE_KEYS.BOOKINGS, bookings);
+      notify();
+    }
+  },
+
+  // Spaces & Floor Plan Tables
+  getTables(space?: string): TableItem[] {
+    const tables = getItem(STORAGE_KEYS.TABLES, INITIAL_TABLES);
+    if (space && space !== 'All spaces') {
+      return tables.filter((t) => t.space === space);
+    }
+    return tables;
+  },
+
+  updateTableStatus(id: string, status: TableStatus): void {
+    const tables = this.getTables();
+    const idx = tables.findIndex((t) => t.id === id);
+    if (idx >= 0) {
+      tables[idx].status = status;
+      setItem(STORAGE_KEYS.TABLES, tables);
+      notify();
+    }
   },
 
   // Reset to seed data

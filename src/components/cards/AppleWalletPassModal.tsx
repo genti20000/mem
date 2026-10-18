@@ -108,22 +108,22 @@ export const AppleWalletPassModal: React.FC<AppleWalletPassModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-3 sm:p-5 overflow-y-auto">
-      <div className="w-full max-w-lg rounded-3xl bg-[#121114] border border-[#581625] shadow-2xl overflow-hidden flex flex-col my-auto max-h-[95vh] animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-5 overflow-y-auto">
+      <div className="w-full max-w-lg rounded-3xl bg-white border border-[#EDE7DF] shadow-2xl overflow-hidden flex flex-col my-auto max-h-[95vh] animate-fadeIn">
         {/* Top Modal Header */}
-        <div className="px-5 py-4 bg-[#181518] border-b border-[#2C0E17] flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
+        <div className="px-6 py-4 bg-white border-b border-[#EDE7DF] flex items-center justify-between">
+          <div className="flex items-center gap-3">
             {/* Apple Wallet Icon badge */}
-            <div className="w-8 h-8 rounded-xl bg-black border border-white/20 flex items-center justify-center text-white shadow-md">
+            <div className="w-9 h-9 rounded-2xl bg-black flex items-center justify-center text-white shadow-xs">
               <svg className="w-4 h-4 fill-current" viewBox="0 0 170 170">
                 <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.69-3.04-7.67-7.81-11.96-14.34-6.19-9.57-11.05-20.44-14.57-32.61-3.52-12.18-5.28-23.71-5.28-34.6 0-14.03 3.69-25.79 11.08-35.26 7.39-9.48 16.64-14.34 27.75-14.6 5.33 0 11.25 1.45 17.75 4.35 6.5 2.89 10.37 4.39 11.61 4.5 1.52-.22 5.58-1.78 12.19-4.67 6.6-2.9 12.15-4.22 16.64-3.98 12.83.63 22.84 5.24 30.03 13.84-11.31 6.86-16.85 16.32-16.62 28.38.22 9.46 3.91 17.38 11.08 23.77 7.17 6.39 15.65 10.12 25.43 11.2-.87 2.73-1.85 5.5-2.93 8.32zM119.22 33.15c0-7.72 2.72-15.01 8.16-21.87 5.43-6.85 12.18-11.02 20.23-12.51.22 1.3.33 2.5.33 3.59 0 7.6-2.83 14.9-8.49 21.89-5.65 6.99-12.62 11.16-20.9 12.51-.43-1.09-.64-2.18-.64-3.27z" />
               </svg>
             </div>
             <div>
-              <h2 className="font-serif text-base sm:text-lg font-bold text-white tracking-wide">
+              <h2 className="font-serif text-base font-bold text-stone-900 tracking-tight">
                 Apple Wallet Pass
               </h2>
-              <div className="text-[11px] font-mono text-[#C6A052]">
+              <div className="text-[11px] font-mono text-[#780C1E] font-semibold">
                 Official PassKit Card · 23 Frith Street Soho
               </div>
             </div>
@@ -134,17 +134,17 @@ export const AppleWalletPassModal: React.FC<AppleWalletPassModalProps> = ({
             <button
               type="button"
               onClick={() => setIsFlipped(!isFlipped)}
-              className="p-2 rounded-xl bg-[#221C20] hover:bg-[#2C2429] border border-white/10 text-amber-200 text-xs font-mono flex items-center gap-1 transition-all active:scale-95"
+              className="p-2 px-3 rounded-xl bg-white hover:bg-[#FAF8F5] border border-[#EDE7DF] text-stone-700 text-xs font-medium flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-2xs"
               title="Flip to view back of pass"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
+              <RotateCcw className="w-3.5 h-3.5 text-[#780C1E]" />
               <span className="text-[11px]">{isFlipped ? 'Front' : 'Back Details'}</span>
             </button>
 
             <button
               type="button"
               onClick={onClose}
-              className="p-2 rounded-xl bg-[#221C20] hover:bg-[#34111C] text-stone-400 hover:text-white transition-all ml-1"
+              className="p-2 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-[#FAF8F5] transition-colors ml-1 cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -152,7 +152,7 @@ export const AppleWalletPassModal: React.FC<AppleWalletPassModalProps> = ({
         </div>
 
         {/* Modal Body: Interactive Apple Wallet Pass Viewport */}
-        <div className="p-4 sm:p-6 flex flex-col items-center justify-center bg-[#09080A] overflow-y-auto">
+        <div className="p-4 sm:p-6 flex flex-col items-center justify-center bg-[#FAF8F5] overflow-y-auto">
           {/* Card perspective container */}
           <div className="w-full max-w-sm perspective-[1200px]">
             <div
@@ -382,43 +382,43 @@ export const AppleWalletPassModal: React.FC<AppleWalletPassModalProps> = ({
 
             {/* Instant Mobile Pass for iPhone Button */}
             <a
-              href={`/?tab=cards&member=${encodeURIComponent(member.memberNumber)}`}
+              href={`/?pass=${encodeURIComponent(member.memberNumber)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#3E101B] to-[#250A11] hover:from-[#4E1422] hover:to-[#2F0D16] border border-[#C6A052]/50 text-[#F5E6CA] flex items-center justify-center gap-2 text-xs font-mono font-bold shadow-md cursor-pointer transition-all"
+              className="w-full py-3 px-4 rounded-xl bg-[#780C1E] hover:bg-[#8E1026] text-white flex items-center justify-center gap-2 text-xs font-semibold shadow-xs cursor-pointer transition-all"
             >
-              <Sparkles className="w-4 h-4 text-[#E5C378]" />
-              <span>Open Live Pass on iPhone (Add to Home Screen)</span>
-              <ExternalLink className="w-3.5 h-3.5 text-stone-400 ml-auto" />
+              <Sparkles className="w-4 h-4 text-[#FFE194]" />
+              <span>Open Isolated Pass on iPhone (Add to Home Screen)</span>
+              <ExternalLink className="w-3.5 h-3.5 text-white/70 ml-auto" />
             </a>
 
             {/* iOS Pass Info Notice */}
-            <div className="p-3 rounded-xl bg-[#140D10] border border-[#3E101B] text-left">
+            <div className="p-3.5 rounded-2xl bg-white border border-[#EDE7DF] text-left shadow-2xs">
               <button
                 type="button"
                 onClick={() => setShowIosGuide(!showIosGuide)}
-                className="w-full flex items-center justify-between text-[11px] font-mono text-[#E5C378] hover:text-white"
+                className="w-full flex items-center justify-between text-xs text-stone-700 hover:text-stone-900 cursor-pointer"
               >
-                <div className="flex items-center gap-1.5 font-semibold">
-                  <Info className="w-3.5 h-3.5 text-[#C6A052]" />
+                <div className="flex items-center gap-1.5 font-semibold text-stone-800">
+                  <Info className="w-3.5 h-3.5 text-[#780C1E]" />
                   <span>iPhone / Apple Wallet Note</span>
                 </div>
-                <span className="text-[10px] text-stone-400">{showIosGuide ? 'Hide' : 'Why can’t passes be added?'}</span>
+                <span className="text-[11px] text-[#780C1E] font-medium">{showIosGuide ? 'Hide' : 'Why can’t passes be added?'}</span>
               </button>
 
               {showIosGuide && (
-                <div className="mt-2.5 pt-2 border-t border-white/[0.06] text-[11px] text-stone-300 space-y-2 leading-relaxed">
+                <div className="mt-2.5 pt-2 border-t border-[#F0EBE3] text-xs text-stone-600 space-y-2 leading-relaxed">
                   <p>
                     <strong>Why iOS might block raw .pkpass files:</strong> Apple's native Wallet app requires passes to be digitally signed by a registered Apple Developer Account certificate ($99/yr Apple CA).
                   </p>
-                  <p className="text-amber-200/90 font-medium">
-                    <strong>100% Reliable Fix for iPhone:</strong>
+                  <p className="text-amber-800 font-semibold">
+                    100% Reliable Fix for iPhone:
                   </p>
-                  <ol className="list-decimal pl-4 space-y-1 text-stone-400 text-[10px]">
-                    <li>Tap <strong>"Open Live Pass on iPhone"</strong> above (or open the link sent via SMS/Email).</li>
+                  <ol className="list-decimal pl-4 space-y-1 text-stone-600 text-[11px]">
+                    <li>Tap <strong>"Open Isolated Pass on iPhone"</strong> above (or open the link sent via SMS/Email).</li>
                     <li>In Safari on your iPhone, tap the <strong>Share</strong> button (square with arrow up).</li>
                     <li>Scroll down and tap <strong>"Add to Home Screen"</strong>.</li>
-                    <li>The Jonny's Soho pass is now pinned to your phone with live dynamic QR tokens for door entry!</li>
+                    <li>The Amica Soho pass is now pinned to your phone with live dynamic QR tokens for door entry!</li>
                   </ol>
                 </div>
               )}
@@ -432,20 +432,20 @@ export const AppleWalletPassModal: React.FC<AppleWalletPassModalProps> = ({
                   onClose();
                   if (onOpenSendModal) onOpenSendModal();
                 }}
-                className="py-2.5 px-3 rounded-xl bg-[#1A1417] hover:bg-[#251A1F] border border-[#3E101B] text-stone-200 text-xs font-mono flex items-center justify-center gap-2 transition-all active:scale-95"
+                className="py-2.5 px-3 rounded-xl bg-white hover:bg-[#FAF8F5] border border-[#EDE7DF] text-stone-800 text-xs font-semibold flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer shadow-xs"
               >
-                <Mail className="w-3.5 h-3.5 text-[#C6A052]" />
+                <Mail className="w-3.5 h-3.5 text-[#780C1E]" />
                 <span>Send Pass Link</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => {
-                  const passUrl = `${window.location.origin}/?tab=cards&member=${encodeURIComponent(member.memberNumber)}`;
+                  const passUrl = `${window.location.origin}/?pass=${encodeURIComponent(member.memberNumber)}`;
                   if (navigator.share) {
                     navigator.share({
-                      title: `JONNY'S Membership Pass - ${member.fullName}`,
-                      text: `Digital membership pass for Jonny's Soho at 23 Frith Street (${member.memberNumber})`,
+                      title: `AMICA SOHO - Member Pass - ${member.fullName}`,
+                      text: `Digital membership pass for Amica Soho at 23 Frith Street (${member.memberNumber})`,
                       url: passUrl,
                     }).catch(() => {});
                   } else {
@@ -454,15 +454,15 @@ export const AppleWalletPassModal: React.FC<AppleWalletPassModalProps> = ({
                     setTimeout(() => setCopyToast(false), 3000);
                   }
                 }}
-                className="py-2.5 px-3 rounded-xl bg-[#1A1417] hover:bg-[#251A1F] border border-[#3E101B] text-stone-200 text-xs font-mono flex items-center justify-center gap-2 transition-all active:scale-95"
+                className="py-2.5 px-3 rounded-xl bg-white hover:bg-[#FAF8F5] border border-[#EDE7DF] text-stone-800 text-xs font-semibold flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer shadow-xs"
               >
-                <Share2 className="w-3.5 h-3.5 text-stone-400" />
+                <Share2 className="w-3.5 h-3.5 text-stone-600" />
                 <span>Share Pass Link</span>
               </button>
             </div>
 
             {copyToast && (
-              <div className="p-2 rounded-lg bg-emerald-950/80 border border-emerald-500/60 text-emerald-300 text-xs font-mono text-center animate-fadeIn">
+              <div className="p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium text-center animate-fadeIn">
                 ✓ Pass link copied to clipboard!
               </div>
             )}
@@ -470,9 +470,9 @@ export const AppleWalletPassModal: React.FC<AppleWalletPassModalProps> = ({
         </div>
 
         {/* Footer guidance note */}
-        <div className="px-5 py-3 bg-[#120F12] border-t border-[#2C0E17] flex items-center justify-between text-[11px] text-stone-400 font-mono">
+        <div className="px-6 py-3 bg-white border-t border-[#EDE7DF] flex items-center justify-between text-[11px] text-stone-400 font-mono">
           <span>Tap pass to view reverse side</span>
-          <span className="text-[#C6A052]">iOS & Android Compatible</span>
+          <span className="text-[#780C1E] font-semibold">iOS & Android Compatible</span>
         </div>
       </div>
     </div>

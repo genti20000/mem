@@ -217,3 +217,56 @@ export interface ValidationResult {
   code?: string;
   remainingTimeMs?: number;
 }
+
+// -------------------------------------------------------------
+// AMICA SOHO - RESERVATIONS, BOOKINGS & SPACES FLOOR PLAN TYPES
+// -------------------------------------------------------------
+
+export type BookingStatus = 'confirmed' | 'arrived' | 'seated' | 'completed' | 'cancelled' | 'walk_in';
+export type TableStatus = 'available' | 'booked' | 'occupied' | 'blocked';
+export type AccentColor = 'green' | 'burgundy' | 'purple' | 'gold' | 'gray';
+
+export interface BookingGuestHistory {
+  date: string;
+  guests: number;
+  type: string;
+}
+
+export interface BookingRecord {
+  id: string;
+  guestName: string;
+  phone: string;
+  email?: string;
+  date: string; // e.g. '2025-10-15'
+  time: string; // e.g. '19:00'
+  duration: string; // e.g. '2 hours'
+  partySize: number;
+  space: string; // 'Main Dining' | 'Terrace' | 'Bar'
+  tableId: string; // 'Table 3', etc.
+  tableCapacity: string; // '2–4 guests'
+  occasion: string; // 'Birthday' | 'Dinner' | 'Drinks' | 'Anniversary' | 'Business' | 'None'
+  specialRequests?: string;
+  notes?: string;
+  status: BookingStatus;
+  type: 'booking' | 'event';
+  accentColor: AccentColor;
+  guestHistory: BookingGuestHistory[];
+  createdAt: string;
+}
+
+export interface TableItem {
+  id: string;
+  number: number;
+  name: string;
+  space: string;
+  capacityMin: number;
+  capacityMax: number;
+  status: TableStatus;
+  shape: 'circle' | 'rect' | 'booth' | 'oval';
+  x: number; // percentage (0-100)
+  y: number; // percentage (0-100)
+  width: number;
+  height: number;
+  currentBookingId?: string;
+  currentGuestName?: string;
+}

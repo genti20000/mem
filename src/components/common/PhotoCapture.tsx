@@ -591,7 +591,7 @@ export const PhotoCaptureModal: React.FC<PhotoCaptureModalProps> = ({
         <div className="flex items-center justify-between pb-4 border-b border-[#F5CE76]/20">
           <div>
             <h3 className="font-serif text-lg font-bold text-[#FFE194]">
-              Biometric Enrollment: {member.fullName}
+              Member Profile Photo: {member.fullName}
             </h3>
             <p className="text-xs font-mono text-stone-300">
               Ref: {member.memberNumber} · {member.status.replace('_', ' ').toUpperCase()}
@@ -609,17 +609,13 @@ export const PhotoCaptureModal: React.FC<PhotoCaptureModalProps> = ({
         {/* Content */}
         <div className="py-5 space-y-4">
           <div className="text-xs text-stone-300 leading-relaxed">
-            Snap a fresh camera snapshot or upload a portrait to extract the 128-float on-device facial recognition vector:
+            Snap a fresh camera snapshot or upload a portrait photo for member pass identification:
           </div>
 
           <PhotoCapture
             currentPhotoUrl={photoUrl}
-            currentFaceDescriptor={faceDescriptor}
-            currentExpressConsent={expressConsent}
-            onPhotoCaptured={(newUrl, newDescriptor, newConsent) => {
+            onPhotoCaptured={(newUrl) => {
               setPhotoUrl(newUrl);
-              if (newDescriptor) setFaceDescriptor(newDescriptor);
-              if (newConsent !== undefined) setExpressConsent(newConsent);
             }}
             label="Capture or Upload Photo"
           />
@@ -627,7 +623,7 @@ export const PhotoCaptureModal: React.FC<PhotoCaptureModalProps> = ({
           {isSaved && (
             <div className="p-3 rounded-xl bg-emerald-950/80 border border-emerald-500 text-emerald-300 text-xs font-mono flex items-center gap-2 animate-fadeIn">
               <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>Biometric profile updated and saved to Cloud Firestore!</span>
+              <span>Member profile photo updated successfully!</span>
             </div>
           )}
         </div>
@@ -646,7 +642,7 @@ export const PhotoCaptureModal: React.FC<PhotoCaptureModalProps> = ({
             onClick={handleSave}
             className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#8E0E24] to-[#4A0813] hover:from-[#9E142B] hover:to-[#5A0C19] border border-[#F5CE76]/60 text-[#FFE194] text-xs font-mono font-bold shadow-md active:scale-95"
           >
-            Save Biometric Profile
+            Save Profile Photo
           </button>
         </div>
       </div>

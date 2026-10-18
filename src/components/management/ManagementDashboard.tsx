@@ -209,35 +209,32 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header & RBAC Notice */}
-      <div className="rounded-2xl bg-[#120A0E] border-2 border-[#F5CE76]/35 p-4 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
+      <div className="rounded-2xl bg-white border border-[#EDE7DF] p-5 sm:p-7 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs">
         <div>
           <div className="flex items-center gap-2.5">
-            <span className="font-script text-2xl sm:text-3xl font-bold text-[#FFE194]">
-              Amica
+            <span className="font-cinzel text-base sm:text-lg font-bold tracking-[0.2em] text-[#780C1E]">
+              AMICA SOHO
             </span>
-            <span className="font-cinzel text-xs sm:text-sm font-extrabold tracking-[2px] text-[#F5CE76]">
-              LATE
-            </span>
-            <span className="text-xs text-[#F5CE76]/40 hidden sm:inline">·</span>
-            <h1 className="font-serif text-xl sm:text-2xl font-bold text-white">
+            <span className="text-stone-300">·</span>
+            <h1 className="font-serif text-xl sm:text-2xl font-bold text-stone-900">
               Licensing & Governance Dashboard
             </h1>
-            <span className="px-2.5 py-0.5 rounded-lg bg-[#8E0E24] border border-[#F5CE76]/50 text-white text-xs font-mono uppercase tracking-wider font-bold">
+            <span className="px-2.5 py-0.5 rounded-full bg-stone-100 border border-stone-200 text-stone-700 text-[10px] font-mono uppercase tracking-wider font-bold">
               {currentStaff.role.toUpperCase()}
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-stone-200 mt-1 font-medium">
-            Sub: <span className="text-[#FFE194] font-bold">Jonny&apos;s Late Show</span> · 23 Frith Street Soho · 48-hour statutory review engine & governance logs.
+          <p className="text-xs sm:text-sm text-stone-500 mt-1 font-medium">
+            23 Frith Street Soho · Statutory 48-hour admissions review engine, licensing capacity & governance.
           </p>
         </div>
 
         {!isAuthorizedManager && (
-          <div className="p-3.5 rounded-xl bg-amber-950/70 border-2 border-amber-500 text-amber-100 text-xs sm:text-sm flex items-center gap-2.5 shadow-md">
-            <Lock className="w-5 h-5 shrink-0 text-amber-400" />
+          <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs sm:text-sm flex items-center gap-2.5 shadow-xs">
+            <Lock className="w-5 h-5 shrink-0 text-amber-700" />
             <span>
-              <strong className="text-amber-300">Read-Only Mode:</strong> Approvals require Manager or Admin role. Switch role via active operator in sidebar.
+              <strong className="text-amber-800">Read-Only Mode:</strong> Approvals require Manager or Admin role. Switch operator in top right.
             </span>
           </div>
         )}
@@ -245,91 +242,91 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
 
       {/* Error / Warning Alert Banner */}
       {errorMessage && (
-        <div className="p-4 rounded-xl bg-rose-950/90 border-2 border-rose-500 text-rose-100 text-xs sm:text-sm font-semibold flex items-center justify-between shadow-xl">
+        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-300 text-rose-900 text-xs sm:text-sm font-semibold flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-rose-300 shrink-0" />
+            <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0" />
             <span>{errorMessage}</span>
           </div>
           <button
             onClick={() => setErrorMessage(null)}
-            className="text-rose-300 hover:text-white p-1 rounded font-mono text-sm font-bold"
+            className="text-rose-600 hover:text-rose-950 p-1 font-mono text-sm font-bold"
           >
             ✕
           </button>
         </div>
       )}
 
-      {/* KPI METRIC CARDS - High Contrast & Compact Mobile */}
+      {/* KPI METRIC CARDS - Clean White Porcelain Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
-        <div className="p-3.5 rounded-2xl bg-[#120A0E] border-2 border-[#F5CE76]/30 shadow-md">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-[#FFE194] font-bold">
+        <div className="p-4 rounded-2xl bg-white border border-[#EDE7DF] shadow-xs">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-stone-500 font-bold">
             Active Members
           </div>
-          <div className="mt-1 font-mono text-2xl sm:text-3xl font-extrabold text-white">
+          <div className="mt-1 font-mono text-2xl sm:text-3xl font-extrabold text-stone-900">
             {activeCount}
           </div>
-          <div className="mt-0.5 text-xs text-emerald-300 font-semibold">Validated credentials</div>
+          <div className="mt-0.5 text-xs text-emerald-700 font-semibold">Validated passes</div>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-[#120A0E] border-2 border-amber-500/50 shadow-md">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-amber-300 font-bold">
-            48h Waiting Queue
+        <div className="p-4 rounded-2xl bg-white border border-[#EDE7DF] shadow-xs">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-amber-700 font-bold">
+            48h Waiting
           </div>
-          <div className="mt-1 font-mono text-2xl sm:text-3xl font-extrabold text-amber-200">
+          <div className="mt-1 font-mono text-2xl sm:text-3xl font-extrabold text-amber-700">
             {waitingCount}
           </div>
-          <div className="mt-0.5 text-xs text-amber-300 font-semibold">Statutory lockout</div>
+          <div className="mt-0.5 text-xs text-amber-600 font-semibold">Statutory lockout</div>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-[#120A0E] border-2 border-blue-500/50 shadow-md">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-blue-300 font-bold">
+        <div className="p-4 rounded-2xl bg-white border border-[#EDE7DF] shadow-xs">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-blue-700 font-bold">
             Ready for Review
           </div>
-          <div className="mt-1 font-mono text-2xl sm:text-3xl font-extrabold text-blue-200">
+          <div className="mt-1 font-mono text-2xl sm:text-3xl font-extrabold text-blue-800">
             {readyCount}
           </div>
-          <div className="mt-0.5 text-xs text-blue-300 font-semibold">48h elapsed</div>
+          <div className="mt-0.5 text-xs text-blue-600 font-semibold">48h elapsed</div>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-[#120A0E] border-2 border-rose-500/50 shadow-md">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-rose-300 font-bold">
+        <div className="p-4 rounded-2xl bg-white border border-[#EDE7DF] shadow-xs">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-rose-700 font-bold">
             Suspended
           </div>
-          <div className="mt-1 font-mono text-2xl sm:text-3xl font-extrabold text-rose-200">
+          <div className="mt-1 font-mono text-2xl sm:text-3xl font-extrabold text-rose-700">
             {suspendedCount}
           </div>
-          <div className="mt-0.5 text-xs text-rose-300 font-semibold">Disciplinary hold</div>
+          <div className="mt-0.5 text-xs text-rose-600 font-semibold">Disciplinary hold</div>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-[#120A0E] border-2 border-[#F5CE76]/30 shadow-md">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-[#FFE194] font-bold">
+        <div className="p-4 rounded-2xl bg-white border border-[#EDE7DF] shadow-xs">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-stone-500 font-bold">
             Occupancy Live
           </div>
-          <div className="mt-1 font-mono text-2xl sm:text-3xl font-extrabold text-white">
-            {stats.totalCustomers} <span className="text-base text-[#F5CE76] font-semibold">/ 80</span>
+          <div className="mt-1 font-mono text-2xl sm:text-3xl font-extrabold text-stone-900">
+            {stats.totalCustomers} <span className="text-sm text-stone-400 font-normal">/ 80</span>
           </div>
-          <div className="mt-0.5 text-xs text-stone-300 font-semibold">Customers inside</div>
+          <div className="mt-0.5 text-xs text-stone-500 font-semibold">Inside venue</div>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-[#120A0E] border-2 border-amber-500/50 shadow-md">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-amber-300 font-bold">
-            Proprietor Guests
+        <div className="p-4 rounded-2xl bg-white border border-[#EDE7DF] shadow-xs">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-amber-700 font-bold">
+            Proprietor
           </div>
-          <div className="mt-1 font-mono text-2xl sm:text-3xl font-extrabold text-white">
-            {stats.proprietorGuestsInside} <span className="text-base text-amber-300 font-semibold">/ 5</span>
+          <div className="mt-1 font-mono text-2xl sm:text-3xl font-extrabold text-stone-900">
+            {stats.proprietorGuestsInside} <span className="text-sm text-amber-600 font-semibold">/ 5</span>
           </div>
-          <div className="mt-0.5 text-xs text-stone-300 font-semibold">Authorized list</div>
+          <div className="mt-0.5 text-xs text-stone-500 font-semibold">Statutory limit</div>
         </div>
       </div>
 
-      {/* Tabs - High Contrast Pill Design */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-[#F5CE76]/25 pb-2.5">
+      {/* Tabs - Refined Segmented Control */}
+      <div className="flex flex-wrap items-center gap-1.5 p-1 bg-white border border-[#EDE7DF] rounded-2xl shadow-xs">
         <button
           onClick={() => setActiveTab('applications')}
-          className={`px-4 py-2.5 text-xs sm:text-sm font-mono font-bold rounded-xl transition-all cursor-pointer ${
+          className={`px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl transition-all cursor-pointer ${
             activeTab === 'applications'
-              ? 'bg-gradient-to-r from-[#8E0E24] to-[#4A0813] text-white border-2 border-[#F5CE76] shadow-lg'
-              : 'text-stone-300 hover:text-white bg-[#140C11] border border-[#F5CE76]/20'
+              ? 'bg-[#780C1E] text-white shadow-xs font-bold'
+              : 'text-stone-600 hover:text-stone-900 hover:bg-[#FAF8F5]'
           }`}
         >
           48-Hour Waiting & Review Queue ({waitingCount + readyCount})
@@ -337,10 +334,10 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
 
         <button
           onClick={() => setActiveTab('members')}
-          className={`px-4 py-2.5 text-xs sm:text-sm font-mono font-bold rounded-xl transition-all cursor-pointer ${
+          className={`px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl transition-all cursor-pointer ${
             activeTab === 'members'
-              ? 'bg-gradient-to-r from-[#8E0E24] to-[#4A0813] text-white border-2 border-[#F5CE76] shadow-lg'
-              : 'text-stone-300 hover:text-white bg-[#140C11] border border-[#F5CE76]/20'
+              ? 'bg-[#780C1E] text-white shadow-xs font-bold'
+              : 'text-stone-600 hover:text-stone-900 hover:bg-[#FAF8F5]'
           }`}
         >
           Member Roster & Actions ({members.length})
@@ -348,10 +345,10 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
 
         <button
           onClick={() => setActiveTab('rules')}
-          className={`px-4 py-2.5 text-xs sm:text-sm font-mono font-bold rounded-xl transition-all cursor-pointer ${
+          className={`px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl transition-all cursor-pointer ${
             activeTab === 'rules'
-              ? 'bg-gradient-to-r from-[#8E0E24] to-[#4A0813] text-white border-2 border-[#F5CE76] shadow-lg'
-              : 'text-stone-300 hover:text-white bg-[#140C11] border border-[#F5CE76]/20'
+              ? 'bg-[#780C1E] text-white shadow-xs font-bold'
+              : 'text-stone-600 hover:text-stone-900 hover:bg-[#FAF8F5]'
           }`}
         >
           Club Rules & Versions ({ruleVersions.length})
@@ -359,10 +356,10 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
 
         <button
           onClick={() => setActiveTab('audit')}
-          className={`px-4 py-2 text-xs font-mono font-medium rounded-lg transition-colors ${
+          className={`px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl transition-all cursor-pointer ${
             activeTab === 'audit'
-              ? 'bg-[#3E101B] text-[#E5C378] border border-[#581625]'
-              : 'text-stone-400 hover:text-white'
+              ? 'bg-[#780C1E] text-white shadow-xs font-bold'
+              : 'text-stone-600 hover:text-stone-900 hover:bg-[#FAF8F5]'
           }`}
         >
           Immutable Audit Log ({auditLogs.length})
@@ -372,14 +369,14 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
       {/* TAB 1: 48-HOUR WAITING & REVIEW QUEUE */}
       {activeTab === 'applications' && (
         <div className="space-y-4">
-          <div className="p-4 rounded-xl bg-[#161012] border border-[#3E101B] text-xs text-stone-300 flex items-start gap-3">
-            <Clock className="w-5 h-5 shrink-0 text-amber-400 mt-0.5" />
+          <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-300 text-xs text-amber-900 flex items-start gap-3 shadow-xs">
+            <Clock className="w-5 h-5 shrink-0 text-amber-700 mt-0.5" />
             <div>
-              <div className="font-semibold text-[#E5C378]">
+              <div className="font-semibold text-amber-900 text-sm">
                 Statutory 48-Hour Rule Enforcement
               </div>
-              <div className="text-[11px] text-stone-400 mt-0.5 leading-relaxed">
-                Under the venue’s operating schedule, applicants CANNOT be approved before 48 continuous hours have elapsed. The system programmatically disables approval controls until the exact second of eligibility.
+              <div className="text-xs text-amber-800 mt-0.5 leading-relaxed">
+                Under the venue’s operating schedule, applicants cannot be approved before 48 continuous hours have elapsed. The system programmatically disables approval controls until the exact second of eligibility.
               </div>
             </div>
           </div>
@@ -399,18 +396,18 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
                 return (
                   <div
                     key={app.id}
-                    className="p-5 rounded-2xl bg-[#120F11] border border-[#2B0A13] flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-lg"
+                    className="p-5 rounded-2xl bg-white border border-[#EDE7DF] flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs hover:border-stone-300 transition-colors"
                   >
                     <div className="flex items-start gap-3.5 max-w-xl">
                       {/* Photo Thumbnail with Add/Take Photo Trigger */}
                       <div className="relative group shrink-0">
-                        <div className="w-14 h-14 rounded-xl overflow-hidden border border-[#C6A052]/50 bg-black/40 shadow-inner flex items-center justify-center">
+                        <div className="w-14 h-14 rounded-2xl overflow-hidden border border-[#EDE7DF] bg-[#FAF8F5] shadow-xs flex items-center justify-center">
                           {app.photoUrl ? (
                             <img src={app.photoUrl} alt={app.fullName} className="w-full h-full object-cover" />
                           ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center text-stone-600 bg-[#161013]">
-                              <Camera className="w-4 h-4 text-stone-500" />
-                              <span className="text-[7px] font-mono text-stone-500">NO PHOTO</span>
+                            <div className="w-full h-full flex flex-col items-center justify-center text-stone-400 bg-[#FAF8F5]">
+                              <Camera className="w-4 h-4 text-stone-400" />
+                              <span className="text-[7px] font-mono text-stone-400">NO PHOTO</span>
                             </div>
                           )}
                         </div>
@@ -420,7 +417,7 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
                             setPhotoTargetMember(app);
                             setShowPhotoModal(true);
                           }}
-                          className="mt-1 w-full text-[9px] font-mono py-0.5 px-1 rounded bg-[#2A0C14] hover:bg-[#3E101B] border border-[#C6A052]/40 text-[#E5C378] text-center flex items-center justify-center gap-1"
+                          className="mt-1 w-full text-[9px] font-mono py-0.5 px-1 rounded-md bg-[#FAF8F5] hover:bg-stone-100 border border-[#EDE7DF] text-stone-700 text-center flex items-center justify-center gap-1 cursor-pointer"
                           title="Add photo or take new"
                         >
                           <Camera className="w-2.5 h-2.5" />
@@ -430,17 +427,17 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
 
                       <div className="space-y-1.5 flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-serif text-lg font-bold text-stone-100">
+                          <span className="font-serif text-lg font-bold text-stone-900">
                             {app.fullName}
                           </span>
-                          <span className="font-mono text-xs text-[#C6A052]">
+                          <span className="font-mono text-xs font-bold text-[#780C1E]">
                             ({app.memberNumber})
                           </span>
                           <span
-                            className={`text-[9px] font-mono uppercase px-2 py-0.5 rounded border ${
+                            className={`text-[9px] font-mono uppercase px-2 py-0.5 rounded-md border font-semibold ${
                               isEligibleForApproval
-                                ? 'bg-blue-950/40 border-blue-500/50 text-blue-300'
-                                : 'bg-amber-950/40 border-amber-500/50 text-amber-300'
+                                ? 'bg-blue-50 border-blue-200 text-blue-800'
+                                : 'bg-amber-50 border-amber-200 text-amber-800'
                             }`}
                           >
                             {isEligibleForApproval
@@ -449,21 +446,23 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
                           </span>
                         </div>
 
-                        <div className="text-xs text-stone-300">
+                        <div className="text-xs text-stone-700">
                           <strong>{app.hospitalityRole}</strong> at <strong>{app.employer}</strong>
                         </div>
 
-                        <div className="text-[11px] text-stone-400">
-                          {app.employerAddressOrWebsite}
-                        </div>
-
-                        {app.employmentEvidenceNote && (
-                          <div className="p-2 rounded-lg bg-[#0B090A] border border-[#200A11] text-[11px] text-stone-300">
-                            <strong className="text-[#C6A052]">Evidence:</strong> {app.employmentEvidenceNote}
+                        {app.employerAddressOrWebsite && (
+                          <div className="text-[11px] text-stone-500">
+                            {app.employerAddressOrWebsite}
                           </div>
                         )}
 
-                        <div className="text-[10px] font-mono text-stone-400 flex items-center gap-2 pt-1">
+                        {app.employmentEvidenceNote && (
+                          <div className="p-2 rounded-xl bg-[#FAF8F5] border border-[#EDE7DF] text-[11px] text-stone-700">
+                            <strong className="text-stone-900">Evidence:</strong> {app.employmentEvidenceNote}
+                          </div>
+                        )}
+
+                        <div className="text-[10px] font-mono text-stone-500 flex items-center gap-2 pt-1">
                           <span>Applied: {new Date(app.appliedAt).toLocaleString('en-GB')}</span>
                           <span>·</span>
                           <span>Accepted Rules: v{app.ruleAcceptance.ruleVersion}</span>
@@ -471,8 +470,8 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
 
                         {/* Remaining countdown banner if still waiting */}
                         {!isEligibleForApproval && (
-                          <div className="text-xs text-amber-400/90 font-mono flex items-center gap-1.5 pt-1">
-                            <Clock className="w-3.5 h-3.5" />
+                          <div className="text-xs text-amber-700 font-mono flex items-center gap-1.5 pt-1 font-semibold">
+                            <Clock className="w-3.5 h-3.5 text-amber-600" />
                             <span>{waitCheck.reason}</span>
                           </div>
                         )}
@@ -485,7 +484,7 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
                         <button
                           onClick={() => handleApprove(app)}
                           disabled={!isAuthorizedManager}
-                          className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-emerald-900/60 hover:bg-emerald-800 border border-emerald-600/50 text-emerald-200 text-xs font-mono font-bold disabled:opacity-30 disabled:cursor-not-allowed shadow transition-colors"
+                          className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold disabled:opacity-30 disabled:cursor-not-allowed shadow-xs transition-colors cursor-pointer"
                         >
                           Approve Membership
                         </button>
@@ -493,7 +492,7 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
                         <>
                           <button
                             disabled
-                            className="w-full sm:w-auto px-3.5 py-2.5 rounded-xl bg-[#181114] border border-amber-600/30 text-amber-400 text-xs font-mono disabled:opacity-50 cursor-not-allowed"
+                            className="w-full sm:w-auto px-3.5 py-2.5 rounded-xl bg-stone-100 border border-stone-200 text-stone-500 text-xs font-mono font-semibold disabled:opacity-80 cursor-not-allowed"
                             title="Standard 48-hour countdown is currently active"
                           >
                             48h Lock Active
@@ -502,10 +501,9 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
                           {isAuthorizedManager && (
                             <button
                               onClick={() => handleOpenAdminBackdateModal(app)}
-                              className="w-full sm:w-auto px-3.5 py-2.5 rounded-xl bg-[#581625] hover:bg-[#741E33] border border-[#C6A052]/60 text-[#E5C378] text-xs font-mono font-bold shadow flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                              className="w-full sm:w-auto px-3.5 py-2.5 rounded-xl bg-[#780C1E] hover:bg-[#8E1026] text-white text-xs font-semibold shadow-xs flex items-center justify-center gap-1.5 active:scale-98 transition-all cursor-pointer"
                               title="Admin option: record that sign-up was completed 48 hours before"
                             >
-                              <Sparkles className="w-3.5 h-3.5 text-[#E5C378]" />
                               <span>Admin Bypass (Done 48h Prior)</span>
                             </button>
                           )}
@@ -517,31 +515,21 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
                           setPhotoTargetMember(app);
                           setShowPhotoModal(true);
                         }}
-                        className="w-full sm:w-auto px-3 py-2 rounded-xl bg-[#201518] hover:bg-[#311C23] border border-[#C6A052]/40 text-[#E5C378] text-xs font-mono flex items-center justify-center gap-1.5"
+                        className="w-full sm:w-auto px-3.5 py-2.5 rounded-xl bg-[#FAF8F5] hover:bg-stone-100 border border-[#EDE7DF] text-stone-700 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
                         title="Add photo or take new with device camera"
                       >
-                        <Camera className="w-3.5 h-3.5 text-[#E5C378]" />
+                        <Camera className="w-3.5 h-3.5 text-stone-600" />
                         <span>Photo</span>
                       </button>
 
-                      <button
-                        onClick={() => {
-                          setActionMember(app);
-                          setActionType('info');
-                        }}
-                        disabled={!isAuthorizedManager}
-                        className="w-full sm:w-auto px-3 py-2 rounded-xl bg-[#1C1619] hover:bg-[#282024] border border-[#3E101B] text-stone-300 text-xs font-mono disabled:opacity-40"
-                      >
-                        Request Info
-                      </button>
-
-                      <button
-                        onClick={() => handleOpenRejectModal(app)}
-                        disabled={!isAuthorizedManager}
-                        className="w-full sm:w-auto px-3 py-2 rounded-xl bg-[#280C14] hover:bg-[#3E101B] border border-rose-600/40 text-rose-300 text-xs font-mono disabled:opacity-40"
-                      >
-                        Reject
-                      </button>
+                      {isAuthorizedManager && (
+                        <button
+                          onClick={() => handleOpenRejectModal(app)}
+                          className="w-full sm:w-auto px-3.5 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-800 text-xs font-semibold cursor-pointer"
+                        >
+                          Reject
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -552,10 +540,10 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
 
       {/* TAB 2: ALL MEMBERS & ACTIONS */}
       {activeTab === 'members' && (
-        <div className="rounded-2xl bg-[#120F11] border border-[#2B0A13] p-5 shadow-xl overflow-x-auto">
+        <div className="rounded-2xl bg-white border border-[#EDE7DF] p-5 shadow-xs overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-[#240D16] text-stone-400 font-mono uppercase text-[10px]">
+              <tr className="border-b border-[#EDE7DF] text-stone-500 font-mono uppercase text-[10px]">
                 <th className="pb-3 w-12">Photo</th>
                 <th className="pb-3">Member</th>
                 <th className="pb-3">Trade Role & Employer</th>
@@ -564,9 +552,9 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
                 <th className="pb-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#1D0C13]">
+            <tbody className="divide-y divide-[#EDE7DF]">
               {members.map((m) => (
-                <tr key={m.id} className="hover:bg-[#181316]/50 transition-colors">
+                <tr key={m.id} className="hover:bg-[#FAF8F5] transition-colors">
                   <td className="py-3">
                     <button
                       type="button"
@@ -574,46 +562,46 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
                         setPhotoTargetMember(m);
                         setShowPhotoModal(true);
                       }}
-                      className="relative group w-10 h-10 rounded-lg overflow-hidden border border-[#C6A052]/40 bg-black block cursor-pointer"
+                      className="relative group w-10 h-10 rounded-xl overflow-hidden border border-[#EDE7DF] bg-[#FAF8F5] block cursor-pointer"
                       title="Update member photo (Add or Take New)"
                     >
                       {m.photoUrl ? (
                         <img src={m.photoUrl} alt="" className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-stone-500 bg-[#161013]">
+                        <div className="w-full h-full flex items-center justify-center text-stone-400 bg-[#FAF8F5]">
                           <Camera className="w-4 h-4" />
                         </div>
                       )}
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[#E5C378] transition-opacity">
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
                         <Camera className="w-3.5 h-3.5" />
                       </div>
                     </button>
                   </td>
-                  <td className="py-3 font-medium text-stone-200">
-                    <div className="text-sm font-serif font-bold text-stone-100">
+                  <td className="py-3 font-medium text-stone-900">
+                    <div className="text-sm font-serif font-bold text-stone-900">
                       {m.fullName}
                     </div>
-                    <div className="text-[10px] font-mono text-[#C6A052]">
-                      {m.memberNumber} · {m.email}
+                    <div className="text-[10px] font-mono text-[#780C1E] font-semibold">
+                      {m.memberNumber} {m.email ? `· ${m.email}` : ''}
                     </div>
                   </td>
-                  <td className="py-3 text-stone-300">
+                  <td className="py-3 text-stone-700">
                     <div>{m.hospitalityRole}</div>
-                    <div className="text-[11px] text-stone-500">{m.employer}</div>
+                    <div className="text-[11px] text-stone-400">{m.employer}</div>
                   </td>
-                  <td className="py-3 font-mono text-stone-400">
+                  <td className="py-3 font-mono text-stone-500">
                     v{m.ruleAcceptance.ruleVersion}
                   </td>
                   <td className="py-3">
                     <span
-                      className={`text-[9px] font-mono uppercase px-2 py-0.5 rounded border ${
+                      className={`text-[9px] font-mono uppercase px-2 py-0.5 rounded-md border font-semibold ${
                         m.status === 'active'
-                          ? 'border-emerald-500/50 text-emerald-300'
+                          ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
                           : m.status === 'waiting_48_hours'
-                          ? 'border-amber-500/50 text-amber-300'
+                          ? 'bg-amber-50 border-amber-200 text-amber-800'
                           : m.status === 'ready_for_review'
-                          ? 'border-blue-500/50 text-blue-300'
-                          : 'border-rose-500/50 text-rose-300'
+                          ? 'bg-blue-50 border-blue-200 text-blue-800'
+                          : 'bg-rose-50 border-rose-200 text-rose-800'
                       }`}
                     >
                       {m.status.replace('_', ' ')}
@@ -626,10 +614,10 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
                           setPhotoTargetMember(m);
                           setShowPhotoModal(true);
                         }}
-                        className="px-2 py-1 text-[11px] rounded bg-[#201518] hover:bg-[#311C23] border border-[#C6A052]/30 text-[#E5C378] font-mono flex items-center gap-1"
+                        className="px-2.5 py-1 text-[11px] rounded-lg bg-[#FAF8F5] hover:bg-stone-100 border border-[#EDE7DF] text-stone-700 font-semibold flex items-center gap-1 cursor-pointer"
                         title="Update member photo (Add or Take New)"
                       >
-                        <Camera className="w-3 h-3 text-[#E5C378]" />
+                        <Camera className="w-3 h-3 text-stone-600" />
                         <span>Photo</span>
                       </button>
 
@@ -640,7 +628,7 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
                             setActionType('reinstate');
                           }}
                           disabled={!isAuthorizedManager}
-                          className="px-2.5 py-1 text-[11px] rounded bg-emerald-950/60 hover:bg-emerald-800 border border-emerald-600/40 text-emerald-300 font-mono disabled:opacity-40"
+                          className="px-2.5 py-1 text-[11px] rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-semibold cursor-pointer disabled:opacity-40"
                         >
                           Reinstate
                         </button>
@@ -651,7 +639,7 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
                             setActionType('suspend');
                           }}
                           disabled={!isAuthorizedManager}
-                          className="px-2.5 py-1 text-[11px] rounded bg-[#2D161C] hover:bg-[#3D1E26] border border-[#581625] text-stone-300 font-mono disabled:opacity-40"
+                          className="px-2.5 py-1 text-[11px] rounded-lg bg-stone-100 hover:bg-stone-200 border border-stone-200 text-stone-700 font-semibold cursor-pointer disabled:opacity-40"
                         >
                           Suspend
                         </button>
@@ -663,7 +651,7 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
                           setActionType('revoke');
                         }}
                         disabled={!isAuthorizedManager}
-                        className="px-2 py-1 text-[11px] rounded bg-[#280C14] hover:bg-[#3A101D] border border-rose-600/40 text-rose-300 font-mono disabled:opacity-40"
+                        className="px-2.5 py-1 text-[11px] rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-800 font-semibold cursor-pointer disabled:opacity-40"
                       >
                         Revoke
                       </button>
@@ -680,13 +668,13 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
       {activeTab === 'rules' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-stone-400">
+            <p className="text-xs text-stone-500">
               Club rules with statutory versioning. Members are bound by the version accepted at application.
             </p>
             <button
               onClick={() => setShowNewRuleModal(true)}
               disabled={!isAuthorizedManager}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#581625] hover:bg-[#6D1B2E] border border-[#C6A052]/40 text-[#E5C378] text-xs font-mono font-bold disabled:opacity-40"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#780C1E] hover:bg-[#8E1026] text-white text-xs font-semibold shadow-xs disabled:opacity-40 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Publish Rule Revision</span>
@@ -697,25 +685,25 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
             {ruleVersions.map((ruleVer) => (
               <div
                 key={ruleVer.version}
-                className="p-5 rounded-2xl bg-[#120F11] border border-[#2B0A13] space-y-3"
+                className="p-5 rounded-2xl bg-white border border-[#EDE7DF] space-y-3 shadow-xs"
               >
-                <div className="flex items-center justify-between pb-3 border-b border-[#200A11]">
+                <div className="flex items-center justify-between pb-3 border-b border-[#EDE7DF]">
                   <div>
-                    <h3 className="font-serif text-lg font-bold text-[#E5C378]">
+                    <h3 className="font-serif text-lg font-bold text-stone-900">
                       {ruleVer.title}
                     </h3>
-                    <div className="text-[11px] font-mono text-stone-400">
+                    <div className="text-[11px] font-mono text-stone-500">
                       Version {ruleVer.version} · Effective from {new Date(ruleVer.effectiveDate).toLocaleDateString('en-GB')}
                     </div>
                   </div>
-                  <span className="text-[10px] font-mono uppercase bg-[#241217] border border-[#581625] text-[#E5C378] px-2 py-0.5 rounded">
+                  <span className="text-[10px] font-mono uppercase bg-stone-100 border border-stone-200 text-stone-700 px-2.5 py-0.5 rounded-full font-bold">
                     Immutable
                   </span>
                 </div>
 
-                <div className="space-y-2 text-xs text-stone-300 leading-relaxed">
+                <div className="space-y-2 text-xs text-stone-700 leading-relaxed">
                   {ruleVer.rules.map((r, idx) => (
-                    <div key={idx} className="p-2 rounded-lg bg-[#0C0A0C] border border-[#1A0A0F]">
+                    <div key={idx} className="p-3 rounded-xl bg-[#FAF8F5] border border-[#EDE7DF]">
                       {r}
                     </div>
                   ))}
@@ -728,14 +716,14 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
 
       {/* TAB 4: IMMUTABLE AUDIT LOG */}
       {activeTab === 'audit' && (
-        <div className="rounded-2xl bg-[#120F11] border border-[#2B0A13] p-5 shadow-xl overflow-x-auto">
-          <div className="text-xs font-mono text-stone-400 mb-3">
+        <div className="rounded-2xl bg-white border border-[#EDE7DF] p-5 shadow-xs overflow-x-auto">
+          <div className="text-xs font-mono text-stone-500 mb-3">
             Every staff and manager decision creates an immutable regulatory audit trail.
           </div>
 
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-[#240D16] text-stone-400 font-mono uppercase text-[10px]">
+              <tr className="border-b border-[#EDE7DF] text-stone-500 font-mono uppercase text-[10px]">
                 <th className="pb-3">Timestamp</th>
                 <th className="pb-3">Actor (Staff)</th>
                 <th className="pb-3">Action</th>
@@ -744,28 +732,28 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
                 <th className="pb-3">New State / Reason</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#1D0C13]">
+            <tbody className="divide-y divide-[#EDE7DF]">
               {auditLogs.map((log) => (
-                <tr key={log.id} className="hover:bg-[#181316]/50 transition-colors">
-                  <td className="py-3 font-mono text-stone-400 text-[11px]">
+                <tr key={log.id} className="hover:bg-[#FAF8F5] transition-colors">
+                  <td className="py-3 font-mono text-stone-500 text-[11px]">
                     {new Date(log.timestamp).toLocaleString('en-GB')}
                   </td>
-                  <td className="py-3 font-medium text-stone-200">
+                  <td className="py-3 font-medium text-stone-900">
                     <div>{log.actorName}</div>
-                    <div className="text-[10px] font-mono text-stone-500 uppercase">
+                    <div className="text-[10px] font-mono text-stone-400 uppercase">
                       {log.actorRole}
                     </div>
                   </td>
-                  <td className="py-3 font-mono text-xs text-[#E5C378]">
+                  <td className="py-3 font-mono text-xs font-bold text-[#780C1E]">
                     {log.action}
                   </td>
-                  <td className="py-3 text-stone-300">
+                  <td className="py-3 text-stone-700">
                     {log.targetName || log.targetId}
                   </td>
-                  <td className="py-3 font-mono text-stone-500">
+                  <td className="py-3 font-mono text-stone-400">
                     {log.previousValue || '—'}
                   </td>
-                  <td className="py-3 text-stone-300">
+                  <td className="py-3 text-stone-800">
                     <div>{log.newValue}</div>
                     {log.reason && (
                       <div className="text-[10px] text-stone-500 italic mt-0.5">
@@ -782,19 +770,19 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
 
       {/* MODAL: MEMBER DISCIPLINARY / REASON MODAL */}
       {actionMember && actionType && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-2xl bg-[#121214] border border-[#581625] shadow-2xl p-6">
-            <h3 className="font-serif text-lg font-bold text-[#E5C378] capitalize">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white border border-[#EDE7DF] shadow-2xl p-6">
+            <h3 className="font-serif text-lg font-bold text-stone-900 capitalize">
               {actionType} Membership: {actionMember.fullName}
             </h3>
 
-            <p className="text-xs text-stone-300 mt-1 mb-4">
+            <p className="text-xs text-stone-500 mt-1 mb-4">
               Enter official justification. This action is permanently recorded in the licensing audit history.
             </p>
 
             <form onSubmit={handleExecuteMemberAction} className="space-y-4">
               <div>
-                <label className="block text-xs font-mono uppercase tracking-wider text-stone-400 mb-1">
+                <label className="block text-xs font-mono uppercase tracking-wider text-stone-700 mb-1 font-bold">
                   Regulatory Justification / Reason *
                 </label>
                 <textarea
@@ -803,7 +791,7 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
                   value={actionReason}
                   onChange={(e) => setActionReason(e.target.value)}
                   placeholder="Detail the infraction, investigation, or reinstatement conditions..."
-                  className="w-full px-3 py-2 bg-[#0B090A] border border-[#3E101B] rounded-lg text-xs text-stone-200 focus:outline-none focus:border-[#C6A052]"
+                  className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#EDE7DF] rounded-xl text-xs text-stone-900 focus:outline-none focus:border-[#780C1E]"
                 />
               </div>
 
@@ -815,14 +803,14 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
                     setActionType(null);
                     setActionReason('');
                   }}
-                  className="px-4 py-2 rounded-lg bg-[#221B1E] text-xs text-stone-300 font-medium"
+                  className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-xs text-stone-700 font-semibold cursor-pointer"
                 >
                   Cancel
                 </button>
 
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-[#581625] hover:bg-[#6F1C30] border border-[#C6A052]/40 text-[#E5C378] text-xs font-mono font-bold"
+                  className="px-4 py-2 rounded-xl bg-[#780C1E] hover:bg-[#8E1026] text-white text-xs font-semibold shadow-xs cursor-pointer"
                 >
                   Confirm & Commit
                 </button>

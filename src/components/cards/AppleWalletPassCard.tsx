@@ -118,7 +118,7 @@ export const AppleWalletPassCard: React.FC<AppleWalletPassCardProps> = ({
                     </span>
                   </div>
                   <div className="font-mono text-[10px] text-white/80 font-bold uppercase mt-0.5">
-                    Sub: <span className="text-[#FFE194]">Jonny&apos;s Late Show</span>
+                    23 Frith Street · Soho
                   </div>
                 </div>
               </div>

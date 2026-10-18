@@ -52,14 +52,14 @@ export const Header: React.FC<HeaderProps> = ({
             className="text-left group flex items-center gap-2.5 focus:outline-none"
           >
             <div className="w-8 h-8 rounded-full border border-[#C6A052]/60 bg-[#161012] flex items-center justify-center text-[#E5C378] font-serif font-bold text-base shadow-inner">
-              J
+              A
             </div>
             <div>
               <span className="font-serif text-xl sm:text-2xl font-bold tracking-wider text-[#E5C378] group-hover:text-amber-200 transition-colors">
-                JONNY’S
+                AMICA
               </span>
               <span className="ml-2 text-xs font-sans font-semibold tracking-widest text-[#9B7836] uppercase">
-                SOHO
+                LATE
               </span>
             </div>
           </button>

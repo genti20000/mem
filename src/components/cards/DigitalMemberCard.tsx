@@ -30,8 +30,15 @@ import { generateSignedMemberToken } from '../../services/security';
 import { UniversalCameraScanner } from '../camera/UniversalCameraScanner';
 import { AppleWalletPassModal } from './AppleWalletPassModal';
 import { SendPassModal } from './SendPassModal';
+import { Eye } from 'lucide-react';
 
-export const DigitalMemberCard: React.FC = () => {
+export interface DigitalMemberCardProps {
+  onPreviewStandalonePass?: (memberNumber: string) => void;
+}
+
+export const DigitalMemberCard: React.FC<DigitalMemberCardProps> = ({
+  onPreviewStandalonePass,
+}) => {
   const [members, setMembers] = useState<Member[]>(clubStore.getMembers());
   const [selectedMemberId, setSelectedMemberId] = useState<string>(
     members.find((m) => m.status === 'active')?.id || members[0]?.id || ''
@@ -115,16 +122,19 @@ export const DigitalMemberCard: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Selector & Info Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl bg-[#120A0E] border-2 border-[#F5CE76]/35 shadow-xl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-white border border-[#EDE7DF] shadow-xs">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="font-script text-2xl font-bold text-[#FFE194]">Amica</span>
-            <span className="font-cinzel text-xs font-bold tracking-[2px] text-[#F5CE76]">LATE</span>
-            <span className="text-xs text-[#F5CE76]/40">·</span>
-            <span className="font-mono text-xs font-bold text-white uppercase">Passes</span>
+          <div className="flex items-center gap-2.5">
+            <span className="font-cinzel text-base sm:text-lg font-bold tracking-[0.2em] text-[#780C1E]">
+              AMICA SOHO
+            </span>
+            <span className="text-stone-300">·</span>
+            <h1 className="font-serif text-xl sm:text-2xl font-bold text-stone-900">
+              Digital Member Pass
+            </h1>
           </div>
-          <p className="text-xs text-stone-200 mt-0.5 font-medium">
-            Rotating dynamic QR tokens for 23 Frith Street door scanner & Apple Wallet.
+          <p className="text-xs sm:text-sm text-stone-500 mt-1 font-medium">
+            Dynamic cryptographic pass for 23 Frith Street door terminal & Apple Wallet.
           </p>
         </div>
 
@@ -135,18 +145,33 @@ export const DigitalMemberCard: React.FC = () => {
               setSelectedMemberId(e.target.value);
               setIsExpanded(false);
             }}
-            className="px-3 py-2 bg-[#0A0608] border border-[#F5CE76]/40 rounded-xl text-xs sm:text-sm font-mono text-white focus:outline-none focus:border-[#FFE194]"
+            className="px-3.5 py-2 bg-[#FAF8F5] border border-[#EDE7DF] rounded-xl text-xs sm:text-sm font-mono text-stone-800 focus:outline-none focus:border-[#780C1E]"
           >
             {members.map((m) => (
-              <option key={m.id} value={m.id} className="bg-[#120A0E] text-white">
+              <option key={m.id} value={m.id}>
                 {m.fullName} ({m.memberNumber}) — {m.status.toUpperCase()}
               </option>
             ))}
           </select>
           <button
             type="button"
+            onClick={() => {
+              if (onPreviewStandalonePass) {
+                onPreviewStandalonePass(activeMember.memberNumber);
+              } else {
+                window.open(`/?pass=${encodeURIComponent(activeMember.memberNumber)}`, '_blank');
+              }
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-[#FAF8F5] border border-[#EDE7DF] text-stone-800 text-xs font-semibold transition-all shadow-xs active:scale-98 cursor-pointer"
+            title="Preview isolated member pass"
+          >
+            <Eye className="w-3.5 h-3.5 text-[#780C1E]" />
+            <span>Recipient View</span>
+          </button>
+          <button
+            type="button"
             onClick={() => setShowAppleWalletModal(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black hover:bg-neutral-900 border border-white/30 text-white text-xs font-mono font-bold transition-all shadow-md active:scale-95 cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-black hover:bg-neutral-800 text-white text-xs font-semibold transition-all shadow-xs active:scale-98 cursor-pointer"
             title="Open Apple Wallet Pass"
           >
             <span>Apple Wallet</span>
@@ -154,7 +179,7 @@ export const DigitalMemberCard: React.FC = () => {
           <button
             type="button"
             onClick={() => setShowSendModal(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-[#8E0E24] to-[#4A0813] hover:from-[#B51330] hover:to-[#680A18] border border-[#F5CE76] text-white text-xs font-mono font-bold transition-all shadow-md active:scale-95 cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#780C1E] hover:bg-[#8E1026] text-white text-xs font-semibold transition-all shadow-xs active:scale-98 cursor-pointer"
             title="Send Pass to Member"
           >
             <Send className="w-3.5 h-3.5" />
@@ -183,7 +208,7 @@ export const DigitalMemberCard: React.FC = () => {
               LATE
             </div>
             <div className="font-mono text-xs font-bold text-white tracking-wider uppercase mt-1">
-              Sub: <span className="text-[#FFE194]">Jonny&apos;s Late Show</span>
+              23 Frith Street · Soho
             </div>
           </div>
 
@@ -348,14 +373,14 @@ export const DigitalMemberCard: React.FC = () => {
                     <div className="text-[10px] font-mono text-stone-400 uppercase font-bold flex items-center gap-1">
                       <Mail className="w-3 h-3 text-[#F5CE76]" /> Email Address
                     </div>
-                    <div className="font-semibold text-white truncate mt-0.5">{activeMember.email}</div>
+                    <div className="font-semibold text-white truncate mt-0.5">{activeMember.email || 'None on file'}</div>
                   </div>
 
                   <div>
                     <div className="text-[10px] font-mono text-stone-400 uppercase font-bold flex items-center gap-1">
                       <Phone className="w-3 h-3 text-[#F5CE76]" /> Contact Phone
                     </div>
-                    <div className="font-semibold text-white mt-0.5">{activeMember.phone}</div>
+                    <div className="font-semibold text-white mt-0.5">{activeMember.phone || 'None on file'}</div>
                   </div>
 
                   <div className="sm:col-span-2">
@@ -371,24 +396,6 @@ export const DigitalMemberCard: React.FC = () => {
                       </div>
                     )}
                   </div>
-                </div>
-
-                {/* Biometric Status Indicator */}
-                <div className="pt-2 border-t border-[#F5CE76]/15 flex items-center justify-between text-[11px]">
-                  <span className="font-mono text-stone-300 flex items-center gap-1.5">
-                    <Cpu className="w-3.5 h-3.5 text-[#F5CE76]" /> Express Biometric Enrollment
-                  </span>
-                  <span
-                    className={`font-mono font-bold ${
-                      activeMember.faceDescriptor && activeMember.faceDescriptor.length === 128
-                        ? 'text-emerald-400'
-                        : 'text-stone-400'
-                    }`}
-                  >
-                    {activeMember.faceDescriptor && activeMember.faceDescriptor.length === 128
-                      ? '✓ 128-D Vector Active'
-                      : 'Not Enrolled'}
-                  </span>
                 </div>
               </div>
 
@@ -574,6 +581,7 @@ export const DigitalMemberCard: React.FC = () => {
         member={activeMember}
         qrToken={activeToken}
         onOpenAppleWalletModal={() => setShowAppleWalletModal(true)}
+        onPreviewStandalonePass={onPreviewStandalonePass}
       />
     </div>
   );

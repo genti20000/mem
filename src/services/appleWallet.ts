@@ -325,7 +325,15 @@ export async function downloadAppleWalletPass(member: Member, qrToken?: string):
  */
 export function getMemberPassUrl(member: Member): string {
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-  return `${baseUrl}/?tab=cards&member=${encodeURIComponent(member.memberNumber)}`;
+  return `${baseUrl}/pass?member=${encodeURIComponent(member.memberNumber)}`;
+}
+
+/**
+ * Generates public-facing member nomination and registration URL
+ */
+export function getPublicRegistrationUrl(): string {
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  return `${baseUrl}/register`;
 }
 
 /**
@@ -334,7 +342,7 @@ export function getMemberPassUrl(member: Member): string {
 export function formatPassSmsMessage(member: Member): string {
   const passUrl = getMemberPassUrl(member);
   const guestAllowance = member.guestAllowance ?? 2;
-  return `JONNY'S SOHO - Private Members' Pass\n\nDear ${member.fullName},\nYour digital membership pass (${member.memberNumber}) is active.\n\nAccess Pass & Add to Apple Wallet: ${passUrl}\n\nVenue: 23 Frith Street, Soho, London W1D 4RR\nAdmissions Rule: Strict last entry at 01:00 AM. Non-member guests depart by 01:30 AM.\nGuest allowance: +${guestAllowance} guests.`;
+  return `AMICA SOHO - Private Members' Pass\n\nDear ${member.fullName},\nYour digital membership pass (${member.memberNumber}) is active.\n\nOpen Digital Pass & Save to Phone: ${passUrl}\n\nVenue: 23 Frith Street, Soho, London W1D 4RR\nAdmissions Rule: Strict last entry at 01:00 AM. Non-member guests depart by 01:30 AM.\nGuest allowance: +${guestAllowance} guests.`;
 }
 
 /**

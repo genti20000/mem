@@ -233,7 +233,6 @@ export default function App() {
     return (
       <StandalonePassView
         memberNumber={route.passMemberNumber}
-        onExitToStaffPortal={() => navigate('door')}
       />
     );
   }

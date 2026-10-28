@@ -14,6 +14,8 @@ import { Member, RuleAcceptance } from '../../types';
 import { clubStore } from '../../services/storage';
 import { AppleWalletPassModal } from '../cards/AppleWalletPassModal';
 import { getMemberPassUrl } from '../../services/appleWallet';
+import { adminAuth } from '../../services/adminAuth';
+import { AdminPasswordModal } from '../auth/AdminPasswordModal';
 
 export interface AmicaLuxuryRegistrationCardProps {
   isPublicPortal?: boolean;
@@ -30,7 +32,7 @@ export const AmicaLuxuryRegistrationCard: React.FC<AmicaLuxuryRegistrationCardPr
 }) => {
   const currentRules = clubStore.getCurrentRuleVersion();
   const currentStaff = clubStore.getCurrentStaff();
-  const isStaffUser = !isPublicPortal && (currentStaff.role === 'admin' || currentStaff.role === 'manager' || isAdminMode);
+  const isStaffUser = !isPublicPortal && (currentStaff.role === 'admin' || currentStaff.role === 'manager' || isAdminMode || adminAuth.isAuthenticated());
 
   // Form Fields
   const [fullName, setFullName] = useState('');
@@ -42,6 +44,7 @@ export const AmicaLuxuryRegistrationCard: React.FC<AmicaLuxuryRegistrationCardPr
 
   // Modals & Status
   const [showRulesModal, setShowRulesModal] = useState(false);
+  const [showAdminPasswordModal, setShowAdminPasswordModal] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [submittedMember, setSubmittedMember] = useState<Member | null>(null);
   const [showWalletModal, setShowWalletModal] = useState(false);
@@ -545,7 +548,13 @@ export const AmicaLuxuryRegistrationCard: React.FC<AmicaLuxuryRegistrationCardPr
                 <input
                   type="checkbox"
                   checked={adminInstantPass}
-                  onChange={(e) => setAdminInstantPass(e.target.checked)}
+                  onChange={(e) => {
+                    if (e.target.checked && !adminAuth.isAuthenticated()) {
+                      setShowAdminPasswordModal(true);
+                      return;
+                    }
+                    setAdminInstantPass(e.target.checked);
+                  }}
                   className="mt-0.5 h-4 w-4 rounded border-[#E5C378] text-[#780C1E] focus:ring-0 bg-[#F9F4EB] cursor-pointer shrink-0"
                 />
                 <span className="text-[11px] text-[#E5C378] leading-tight font-mono">
@@ -630,6 +639,17 @@ export const AmicaLuxuryRegistrationCard: React.FC<AmicaLuxuryRegistrationCardPr
           </div>
         </div>
       )}
+
+      {/* Admin Password Modal */}
+      <AdminPasswordModal
+        isOpen={showAdminPasswordModal}
+        onClose={() => setShowAdminPasswordModal(false)}
+        onSuccess={() => {
+          setAdminInstantPass(true);
+        }}
+        title="Admin Authorization"
+        description="Please enter the admin password to authorize the 48-hour statutory waiting period bypass and issue an instant active pass."
+      />
     </div>
   );
 };

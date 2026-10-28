@@ -19,6 +19,8 @@ import { VenueTimeController } from './components/common/VenueTimeController';
 import { StandalonePassView } from './components/cards/StandalonePassView';
 import { PWAInstallButton } from './components/common/PWAInstallButton';
 import { getPublicRegistrationUrl, getMemberPassUrl } from './services/appleWallet';
+import { adminAuth, subscribeAdminAuth } from './services/adminAuth';
+import { AdminPasswordModal } from './components/auth/AdminPasswordModal';
 import {
   Menu,
   X,
@@ -35,6 +37,9 @@ import {
   Copy,
   Check,
   ExternalLink,
+  Lock,
+  Unlock,
+  KeyRound,
 } from 'lucide-react';
 
 export type AppView =
@@ -151,11 +156,24 @@ export default function App() {
   const [showStaffSelector, setShowStaffSelector] = useState<boolean>(false);
   const [copiedPublicLink, setCopiedPublicLink] = useState<boolean>(false);
 
+  // Admin Password Protection State
+  const [isAdminAuth, setIsAdminAuth] = useState<boolean>(adminAuth.isAuthenticated());
+  const [showAdminPasswordModal, setShowAdminPasswordModal] = useState<boolean>(false);
+  const [pendingAdminAction, setPendingAdminAction] = useState<(() => void) | null>(null);
+
   const staffList = clubStore.getStaffList();
   const nightMode = getNightModeState(currentDate);
 
+  // Subscribe to Admin Auth changes
+  useEffect(() => {
+    const unsub = subscribeAdminAuth(() => {
+      setIsAdminAuth(adminAuth.isAuthenticated());
+    });
+    return unsub;
+  }, []);
+
   // Sync route and document title with browser history
-  const navigate = useCallback((targetView: AppView, passNumber?: string) => {
+  const executeNavigate = useCallback((targetView: AppView, passNumber?: string) => {
     let nextUrl = '/';
     let nextTitle = 'AMICA SOHO · 23 Frith Street';
 
@@ -185,6 +203,16 @@ export default function App() {
     }
     setMobileMenuOpen(false);
   }, [route.passMemberNumber]);
+
+  // Protected navigation requiring admin password
+  const navigate = useCallback((targetView: AppView, passNumber?: string) => {
+    if ((targetView === 'applications' || targetView === 'management') && !adminAuth.isAuthenticated()) {
+      setPendingAdminAction(() => () => executeNavigate(targetView, passNumber));
+      setShowAdminPasswordModal(true);
+      return;
+    }
+    executeNavigate(targetView, passNumber);
+  }, [executeNavigate]);
 
   // Listen to browser popstate (back / forward buttons) and store updates
   useEffect(() => {
@@ -258,8 +286,27 @@ export default function App() {
   // Full operational dashboard with top header, tabs, and licensing controls
   // =========================================================================
   const handleSwitchStaff = (staffId: string) => {
+    const targetStaff = staffList.find((s) => s.id === staffId);
+    if (targetStaff && (targetStaff.role === 'admin' || targetStaff.role === 'manager')) {
+      if (!adminAuth.isAuthenticated()) {
+        setPendingAdminAction(() => () => {
+          clubStore.setCurrentStaff(staffId);
+          setShowStaffSelector(false);
+        });
+        setShowAdminPasswordModal(true);
+        setShowStaffSelector(false);
+        return;
+      }
+    }
     clubStore.setCurrentStaff(staffId);
     setShowStaffSelector(false);
+  };
+
+  const handleLockAdmin = () => {
+    adminAuth.logout();
+    if (route.view === 'applications' || route.view === 'management') {
+      executeNavigate('door');
+    }
   };
 
   const navItems = [
@@ -333,6 +380,33 @@ export default function App() {
             </span>
           </div>
 
+          {/* Admin Lock / Unlock Status Button */}
+          {isAdminAuth ? (
+            <button
+              type="button"
+              onClick={handleLockAdmin}
+              className="flex items-center gap-1.5 py-1 px-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-amber-300 text-xs font-mono transition-all cursor-pointer shadow-xs"
+              title="Admin Mode Active (Password Authenticated). Click to Lock."
+            >
+              <Unlock className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+              <span className="hidden sm:inline font-bold">Admin Active</span>
+              <span className="text-[10px] text-amber-200/80 hover:text-white underline ml-1">Lock</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setPendingAdminAction(null);
+                setShowAdminPasswordModal(true);
+              }}
+              className="flex items-center gap-1.5 py-1 px-2.5 rounded-xl bg-[#1C1217] hover:bg-[#2A1A22] border border-[#3A1E2B] hover:border-[#F5CE76]/50 text-stone-300 hover:text-[#F5CE76] text-xs font-mono transition-all cursor-pointer shadow-xs"
+              title="Admin Controls Protected. Click to enter admin password."
+            >
+              <Lock className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+              <span className="hidden sm:inline">Admin Mode</span>
+            </button>
+          )}
+
           {/* Active Staff Selector Badge */}
           <div className="relative">
             <button
@@ -347,22 +421,30 @@ export default function App() {
             </button>
 
             {showStaffSelector && (
-              <div className="absolute right-0 top-full mt-2 w-52 rounded-2xl bg-[#181015] border border-[#F5CE76]/30 shadow-2xl p-2 z-50 text-xs font-mono text-stone-200 animate-fadeIn">
-                <div className="px-2 py-1 text-[10px] font-bold text-[#F5CE76] uppercase tracking-wider border-b border-stone-800 mb-1">
-                  Active On-Duty Staff
+              <div className="absolute right-0 top-full mt-2 w-56 rounded-2xl bg-[#181015] border border-[#F5CE76]/30 shadow-2xl p-2 z-50 text-xs font-mono text-stone-200 animate-fadeIn">
+                <div className="px-2 py-1 text-[10px] font-bold text-[#F5CE76] uppercase tracking-wider border-b border-stone-800 mb-1 flex items-center justify-between">
+                  <span>Active On-Duty Staff</span>
+                  {isAdminAuth && <span className="text-[9px] text-amber-400">ADMIN UNLOCKED</span>}
                 </div>
-                {staffList.map((st) => (
-                  <button
-                    key={st.id}
-                    onClick={() => handleSwitchStaff(st.id)}
-                    className={`w-full text-left px-2.5 py-1.5 rounded-xl flex items-center justify-between hover:bg-[#2A1A22] transition-colors ${
-                      st.id === currentStaff.id ? 'bg-[#780C1E] text-white font-bold' : ''
-                    }`}
-                  >
-                    <span>{st.name}</span>
-                    <span className="text-[10px] uppercase opacity-75">{st.role}</span>
-                  </button>
-                ))}
+                {staffList.map((st) => {
+                  const requiresAdmin = st.role === 'admin' || st.role === 'manager';
+                  const isLocked = requiresAdmin && !isAdminAuth;
+                  return (
+                    <button
+                      key={st.id}
+                      onClick={() => handleSwitchStaff(st.id)}
+                      className={`w-full text-left px-2.5 py-1.5 rounded-xl flex items-center justify-between hover:bg-[#2A1A22] transition-colors ${
+                        st.id === currentStaff.id ? 'bg-[#780C1E] text-white font-bold' : ''
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span>{st.name}</span>
+                        {isLocked && <Lock className="w-3 h-3 text-amber-400/80 shrink-0" />}
+                      </div>
+                      <span className="text-[10px] uppercase opacity-75">{st.role}</span>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -501,7 +583,32 @@ export default function App() {
 
           {route.view === 'management' && (
             <div className="p-3.5 sm:p-6 lg:p-8 max-w-5xl mx-auto">
-              <ManagementDashboard currentStaff={currentStaff} />
+              {!isAdminAuth ? (
+                <div className="max-w-md mx-auto my-12 p-6 sm:p-8 rounded-[28px] bg-[#140508] border-[1.5px] border-[#D8AA4E] text-center shadow-2xl animate-fadeIn">
+                  <div className="w-14 h-14 rounded-2xl bg-[#E5C378]/15 border border-[#E5C378]/40 flex items-center justify-center mx-auto mb-4">
+                    <Lock className="w-7 h-7 text-[#E5C378]" />
+                  </div>
+                  <h2 className="font-editorial text-2xl sm:text-3xl text-white font-normal mb-2">
+                    Admin Password Required
+                  </h2>
+                  <p className="text-xs text-stone-300 leading-relaxed max-w-sm mx-auto mb-6 font-sans">
+                    Occupancy analytics, queue supervision, and management logs are password protected for Amica Soho management.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPendingAdminAction(() => () => executeNavigate('management'));
+                      setShowAdminPasswordModal(true);
+                    }}
+                    className="w-full py-3.5 px-6 rounded-xl sm:rounded-2xl font-bold uppercase text-xs tracking-wider text-[#1A1005] shadow-[0_4px_24px_rgba(222,174,78,0.35)] hover:brightness-105 active:scale-98 transition-all cursor-pointer"
+                    style={{ background: 'linear-gradient(180deg, #F5D386 0%, #DFB04F 50%, #B8852B 100%)' }}
+                  >
+                    Enter Admin Password
+                  </button>
+                </div>
+              ) : (
+                <ManagementDashboard currentStaff={currentStaff} />
+              )}
             </div>
           )}
 
@@ -513,10 +620,35 @@ export default function App() {
 
           {route.view === 'applications' && (
             <div className="p-3.5 sm:p-6 lg:p-8 max-w-4xl mx-auto">
-              <MembershipApplicationFlow
-                isPublicPortal={false}
-                onOpenPass={(memberNum) => navigate('pass', memberNum)}
-              />
+              {!isAdminAuth ? (
+                <div className="max-w-md mx-auto my-12 p-6 sm:p-8 rounded-[28px] bg-[#140508] border-[1.5px] border-[#D8AA4E] text-center shadow-2xl animate-fadeIn">
+                  <div className="w-14 h-14 rounded-2xl bg-[#E5C378]/15 border border-[#E5C378]/40 flex items-center justify-center mx-auto mb-4">
+                    <Lock className="w-7 h-7 text-[#E5C378]" />
+                  </div>
+                  <h2 className="font-editorial text-2xl sm:text-3xl text-white font-normal mb-2">
+                    Admin Password Required
+                  </h2>
+                  <p className="text-xs text-stone-300 leading-relaxed max-w-sm mx-auto mb-6 font-sans">
+                    Access to candidate nominations, approval queue, and membership administration requires the Amica Soho admin password.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPendingAdminAction(() => () => executeNavigate('applications'));
+                      setShowAdminPasswordModal(true);
+                    }}
+                    className="w-full py-3.5 px-6 rounded-xl sm:rounded-2xl font-bold uppercase text-xs tracking-wider text-[#1A1005] shadow-[0_4px_24px_rgba(222,174,78,0.35)] hover:brightness-105 active:scale-98 transition-all cursor-pointer"
+                    style={{ background: 'linear-gradient(180deg, #F5D386 0%, #DFB04F 50%, #B8852B 100%)' }}
+                  >
+                    Enter Admin Password
+                  </button>
+                </div>
+              ) : (
+                <MembershipApplicationFlow
+                  isPublicPortal={false}
+                  onOpenPass={(memberNum) => navigate('pass', memberNum)}
+                />
+              )}
             </div>
           )}
         </div>
@@ -561,6 +693,22 @@ export default function App() {
       <TestRunnerModal
         isOpen={showTestRunner}
         onClose={() => setShowTestRunner(false)}
+      />
+
+      {/* Admin Password Authentication & Management Modal */}
+      <AdminPasswordModal
+        isOpen={showAdminPasswordModal}
+        onClose={() => {
+          setShowAdminPasswordModal(false);
+          setPendingAdminAction(null);
+        }}
+        onSuccess={() => {
+          setIsAdminAuth(true);
+          if (pendingAdminAction) {
+            pendingAdminAction();
+            setPendingAdminAction(null);
+          }
+        }}
       />
     </div>
   );

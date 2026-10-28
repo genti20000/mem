@@ -16,11 +16,13 @@ import {
   TrendingUp,
   Sparkles,
   Camera,
+  KeyRound,
 } from 'lucide-react';
 import { Member, StaffUser, ClubRuleVersion, AuditEvent } from '../../types';
 import { clubStore } from '../../services/storage';
 import { validate48HourWaitingPeriod } from '../../services/ruleEngine';
 import { PhotoCaptureModal } from '../common/PhotoCapture';
+import { AdminPasswordModal } from '../auth/AdminPasswordModal';
 
 interface ManagementDashboardProps {
   currentStaff: StaffUser;
@@ -56,6 +58,9 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
   // Photo Capture Modal for Applications and Members
   const [photoTargetMember, setPhotoTargetMember] = useState<Member | null>(null);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
+
+  // Admin Password Management Modal
+  const [showAdminPasswordModal, setShowAdminPasswordModal] = useState(false);
 
   // Error / Warning Message
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -363,6 +368,15 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
           }`}
         >
           Immutable Audit Log ({auditLogs.length})
+        </button>
+
+        <button
+          onClick={() => setShowAdminPasswordModal(true)}
+          className="ml-auto px-3.5 py-1.5 text-xs font-mono font-semibold rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+          title="Configure Admin Password"
+        >
+          <KeyRound className="w-3.5 h-3.5 text-amber-700" />
+          <span>Admin Password</span>
         </button>
       </div>
 
@@ -1016,6 +1030,14 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
           }}
         />
       )}
+
+      {/* Admin Password Configuration Modal */}
+      <AdminPasswordModal
+        isOpen={showAdminPasswordModal}
+        onClose={() => setShowAdminPasswordModal(false)}
+        title="Admin Password Security"
+        description="Verify or update the master admin password for 23 Frith Street."
+      />
     </div>
   );
 };

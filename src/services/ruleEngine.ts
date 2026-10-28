@@ -1,5 +1,5 @@
 /**
- * JONNY'S MEMBERS - Licensing & Regulatory Logic Engine
+ * AMICA SOHO - Licensing & Regulatory Logic Engine
  *
  * All Soho Club Licensing Act conditions are strictly enforced in this module.
  * Logic is enforced programmatically rather than just presented as UI warnings.

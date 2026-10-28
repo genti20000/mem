@@ -853,7 +853,7 @@ export const ManagementDashboard: React.FC<ManagementDashboardProps> = ({ curren
                   <input
                     type="text"
                     required
-                    placeholder="Jonny’s Soho Charter 2026 Revision"
+                    placeholder="Amica Soho Charter 2026 Revision"
                     value={newRuleTitle}
                     onChange={(e) => setNewRuleTitle(e.target.value)}
                     className="w-full px-3 py-2 bg-[#0B090A] border border-[#3E101B] rounded-lg text-xs text-stone-200 focus:outline-none"

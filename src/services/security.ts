@@ -1,5 +1,5 @@
 /**
- * JONNY'S MEMBERS - Security & QR Token Engine
+ * AMICA SOHO - Security & QR Token Engine
  *
  * Implements signed, rotating dynamic membership tokens.
  * Screenshot mitigation: QR tokens rotate every 60 seconds with an HMAC-like signature.

@@ -272,7 +272,7 @@ export const SendPassModal: React.FC<SendPassModalProps> = ({
                   </p>
                   <div className="inline-flex items-center gap-1.5 text-[11px] font-mono text-[#780C1E] font-semibold">
                     <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>Pass Type: pass.club.jonnys.soho</span>
+                    <span>Pass Type: pass.club.amica.soho</span>
                   </div>
                 </div>
               </div>

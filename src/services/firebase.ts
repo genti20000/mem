@@ -1,9 +1,8 @@
 /**
- * JONNY'S MEMBERS - Cloud Firestore Database Service
+ * AMICA SOHO - Cloud Firestore Database Service
  *
  * Connects to the provisioned Google Cloud Firestore database:
- * Database ID: ai-studio-jonnysmembers-2f030468-2445-492d-9868-aa8da0aa192f
- * Project: alert-triode-xggh3
+ * Database ID: ai-studio-remixjonnysmembe-890115bb-6018-40e7-b549-71bfba54902e
  */
 
 import { initializeApp, getApps, getApp } from 'firebase/app';

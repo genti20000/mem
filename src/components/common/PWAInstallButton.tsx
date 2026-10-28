@@ -15,7 +15,7 @@ export const PWAInstallButton: React.FC = () => {
       <button
         onClick={install}
         className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#E5C378] bg-[#1E1612] hover:bg-[#2D1E18] border border-[#C6A052]/40 rounded-lg transition-colors whitespace-nowrap shadow-sm"
-        title="Install JONNY'S MEMBERS on your device"
+        title="Install AMICA SOHO on your device"
       >
         <Download className="w-3.5 h-3.5" />
         <span>Install PWA</span>
@@ -47,7 +47,7 @@ export const PWAInstallButton: React.FC = () => {
                 </button>
               </div>
               <p className="mt-4 text-xs text-stone-300 leading-relaxed">
-                To run JONNY’S in fullscreen door kiosk mode on iPad:
+                To run AMICA SOHO in fullscreen door kiosk mode on iPad:
               </p>
               <ol className="mt-3 space-y-2 text-xs text-stone-300 list-decimal pl-4">
                 <li>Tap the <strong>Share</strong> icon in the Safari toolbar.</li>

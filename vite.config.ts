@@ -14,9 +14,9 @@ export default defineConfig(() => {
         includeAssets: ['favicon.ico', 'icon.svg'],
         manifest: {
           id: '/',
-          name: 'JONNY’S MEMBERS',
-          short_name: 'JONNY’S',
-          description: 'Private members club admissions & door compliance for 23 Frith Street.',
+          name: 'AMICA SOHO',
+          short_name: 'AMICA',
+          description: 'Private members club admissions & door compliance for 23 Frith Street, Soho.',
           theme_color: '#0B0B0C',
           background_color: '#0B0B0C',
           display: 'standalone',
@@ -41,7 +41,7 @@ export default defineConfig(() => {
     ],
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        '@': path.resolve(import.meta.dirname || '.', '.'),
       },
     },
     server: {

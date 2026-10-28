@@ -34,14 +34,19 @@ export const StandalonePassView: React.FC<StandalonePassViewProps> = ({ memberNu
   const [showInstallGuide, setShowInstallGuide] = useState<boolean>(false);
 
   useEffect(() => {
-    // Find member by memberNumber or ID
-    const found = clubStore
-      .getMembers()
-      .find(
+    // Find member by memberNumber or ID with legacy JNY- -> AMC- alias mapping
+    const members = clubStore.getMembers();
+    const query = (memberNumber || '').trim().toLowerCase();
+    const aliased = query.replace(/^jny-/i, 'amc-');
+    const found =
+      members.find(
         (m) =>
-          m.memberNumber.toLowerCase() === memberNumber.toLowerCase() ||
-          m.id.toLowerCase() === memberNumber.toLowerCase()
-      );
+          m.memberNumber.toLowerCase() === query ||
+          m.memberNumber.toLowerCase() === aliased ||
+          m.id.toLowerCase() === query ||
+          m.id.toLowerCase() === aliased
+      ) || (members.length > 0 ? members[0] : null);
+
     if (found) {
       setMember(found);
       try {
@@ -96,8 +101,22 @@ export const StandalonePassView: React.FC<StandalonePassViewProps> = ({ memberNu
           <p className="text-xs text-stone-400 mb-6 leading-relaxed">
             The pass reference (<span className="font-mono text-[#E8CCA0] font-bold">{memberNumber}</span>) was not located. Please present photo ID at reception.
           </p>
-          <div className="text-[11px] font-mono text-[#DFBE7B]/80 border-t border-white/10 pt-4">
-            Amica Soho · 23 Frith Street, London W1D 4RR
+          <div className="pt-4 border-t border-white/10 space-y-2">
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  localStorage.removeItem('amica_saved_member_pass');
+                } catch {}
+                window.location.href = '/';
+              }}
+              className="px-5 py-2.5 rounded-xl bg-[#5A0D1C] hover:bg-[#780C1E] text-white text-xs font-semibold cursor-pointer shadow-md"
+            >
+              Return to Reception Portal
+            </button>
+            <div className="text-[11px] font-mono text-[#DFBE7B]/80 pt-2">
+              Amica Soho · 23 Frith Street, London W1D 4RR
+            </div>
           </div>
         </div>
       </div>

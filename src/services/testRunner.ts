@@ -1,5 +1,5 @@
 /**
- * JONNY'S MEMBERS - Automated Regulatory & Licensing Boundary Test Suite
+ * AMICA SOHO - Automated Regulatory & Licensing Boundary Test Suite
  *
  * Covers all statutory licensing boundaries specified in the brief:
  * 1. 47h59m vs 48h00m Waiting Period

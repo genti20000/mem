@@ -182,7 +182,7 @@ export const AppleWalletPassModal: React.FC<AppleWalletPassModalProps> = ({
                         </span>
                       </div>
                       <div className="text-[10px] font-mono tracking-wider uppercase text-white font-bold mt-0.5">
-                        Sub: <span className="text-[#FFE194]">Jonny&apos;s Late Show</span>
+                        <span className="text-[#FFE194]">23 Frith Street · Soho</span>
                       </div>
                     </div>
                   </div>
@@ -319,10 +319,10 @@ export const AppleWalletPassModal: React.FC<AppleWalletPassModalProps> = ({
                       VENUE LOCATION & CONTACT
                     </div>
                     <div className="text-xs text-stone-300 leading-snug mt-0.5">
-                      Jonny&apos;s Soho, 23 Frith Street, Soho, London W1D 4RR
+                      Amica Soho, 23 Frith Street, Soho, London W1D 4RR
                     </div>
                     <div className="text-[11px] font-mono text-stone-400">
-                      reception@jonnys-soho.co.uk · +44 (0)20 7437 2300
+                      concierge@amicasoho.com · +44 (0)20 7437 2300
                     </div>
                   </div>
 

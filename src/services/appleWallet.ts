@@ -1,5 +1,5 @@
 /**
- * JONNY'S MEMBERS - Apple Wallet Pass Service
+ * AMICA SOHO - Apple Wallet Pass Service
  *
  * Implements real Apple Wallet PassKit (.pkpass) generation,
  * manifest checksum calculation (SHA-1), dynamic QR barcodes,
@@ -77,15 +77,15 @@ export function buildAppleWalletPassJson(member: Member, qrToken?: string) {
 
   return {
     formatVersion: 1,
-    passTypeIdentifier: 'pass.club.jonnys.soho',
+    passTypeIdentifier: 'pass.club.amica.soho',
     serialNumber: member.memberNumber,
     teamIdentifier: 'A26V97Y79M',
-    organizationName: "Jonny's Soho",
-    description: "Jonny's Members Club Digital Pass - 23 Frith Street",
+    organizationName: 'Amica Soho',
+    description: 'Amica Soho Members Club Digital Pass - 23 Frith Street',
     foregroundColor: 'rgb(243, 237, 226)',
     backgroundColor: 'rgb(18, 13, 16)',
     labelColor: 'rgb(198, 160, 82)',
-    logoText: "JONNY'S",
+    logoText: 'AMICA',
     generic: {
       headerFields: [
         {
@@ -162,7 +162,7 @@ export function buildAppleWalletPassJson(member: Member, qrToken?: string) {
           key: 'notice',
           label: 'TERMS & ADMISSION CONDITIONS',
           value:
-            'This pass is strictly non-transferable and remains the property of Jonny\'s Soho. Pass holder must present QR token at the door kiosk on arrival.',
+            'This pass is strictly non-transferable and remains the property of Amica Soho. Pass holder must present QR token at the door kiosk on arrival.',
         },
       ],
     },
@@ -170,14 +170,14 @@ export function buildAppleWalletPassJson(member: Member, qrToken?: string) {
       format: 'PKBarcodeFormatQR',
       message: token,
       messageEncoding: 'iso-8859-1',
-      altText: `JONNY'S SOHO · ${member.memberNumber}`,
+      altText: `AMICA SOHO · ${member.memberNumber}`,
     },
     barcodes: [
       {
         format: 'PKBarcodeFormatQR',
         message: token,
         messageEncoding: 'iso-8859-1',
-        altText: `JONNY'S SOHO · ${member.memberNumber}`,
+        altText: `AMICA SOHO · ${member.memberNumber}`,
       },
     ],
   };
@@ -226,7 +226,7 @@ export async function generateAppleWalletPass(
     ctx.font = 'bold 22px serif';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText("JONNY'S", 4, 25);
+    ctx.fillText('AMICA', 4, 25);
     ctx.font = '9px monospace';
     ctx.fillStyle = 'rgba(255,255,255,0.7)';
     ctx.fillText('SOHO · EST. 2026', 4, 42);
@@ -238,7 +238,7 @@ export async function generateAppleWalletPass(
     ctx.font = 'bold 44px serif';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText("JONNY'S", 8, 50);
+    ctx.fillText('AMICA', 8, 50);
     ctx.font = '18px monospace';
     ctx.fillStyle = 'rgba(255,255,255,0.7)';
     ctx.fillText('SOHO · EST. 2026', 8, 84);
@@ -262,7 +262,7 @@ export async function generateAppleWalletPass(
     ctx.fillStyle = '#C6A052';
     ctx.font = 'bold 24px serif';
     ctx.textAlign = 'center';
-    ctx.fillText("JONNY'S", 187.5, 55);
+    ctx.fillText('AMICA', 187.5, 55);
 
     ctx.font = '10px monospace';
     ctx.fillStyle = 'rgba(232, 230, 227, 0.8)';
@@ -299,7 +299,7 @@ export async function generateAppleWalletPass(
   });
 
   const sanitizedName = member.fullName.toLowerCase().replace(/[^a-z0-9]/g, '-');
-  const fileName = `jonnys-pass-${sanitizedName}-${member.memberNumber}.pkpass`;
+  const fileName = `amica-pass-${sanitizedName}-${member.memberNumber}.pkpass`;
 
   return { blob, fileName, passJson };
 }
@@ -357,7 +357,7 @@ export function generatePassEmailHtml(member: Member): string {
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Jonny's Soho - Digital Member Pass</title>
+  <title>Amica Soho - Digital Member Pass</title>
 </head>
 <body style="margin:0;padding:0;background-color:#0B0B0D;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#E8E6E3;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0B0B0D;padding:40px 10px;">
@@ -367,7 +367,7 @@ export function generatePassEmailHtml(member: Member): string {
           <!-- Header -->
           <tr>
             <td style="padding:36px 32px;background:linear-gradient(180deg, #2b0b14 0%, #141115 100%);text-align:center;border-bottom:1px solid rgba(198,160,82,0.2);">
-              <h1 style="margin:0;font-family:Georgia,serif;font-size:32px;letter-spacing:4px;color:#C6A052;text-transform:uppercase;">JONNY'S</h1>
+              <h1 style="margin:0;font-family:Georgia,serif;font-size:32px;letter-spacing:4px;color:#C6A052;text-transform:uppercase;">AMICA</h1>
               <p style="margin:8px 0 0;font-size:11px;letter-spacing:2.5px;color:rgba(255,255,255,0.5);text-transform:uppercase;">23 Frith Street · Soho · London</p>
             </td>
           </tr>
@@ -377,7 +377,7 @@ export function generatePassEmailHtml(member: Member): string {
               <p style="margin:0 0 16px;font-size:13px;letter-spacing:1.5px;color:#C6A052;text-transform:uppercase;font-weight:600;">OFFICIAL MEMBERSHIP ADMISSION PASS</p>
               <h2 style="margin:0 0 20px;font-size:24px;color:#FFFFFF;font-weight:600;">Welcome, ${member.fullName}</h2>
               <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#C4C2BE;">
-                Your digital membership credentials for Jonny's Soho have been verified. You may now add your pass directly to your <strong>Apple Wallet</strong> on iPhone or Apple Watch, or present the live QR code at the door reception kiosk.
+                Your digital membership credentials for Amica Soho have been verified. You may now add your pass directly to your <strong>Apple Wallet</strong> on iPhone or Apple Watch, or present the live QR code at the door reception kiosk.
               </p>
 
               <!-- Member Card Snapshot -->
@@ -419,7 +419,7 @@ export function generatePassEmailHtml(member: Member): string {
           <!-- Footer -->
           <tr>
             <td style="padding:24px 32px;background-color:#0D0A0E;border-top:1px solid rgba(255,255,255,0.06);text-align:center;font-size:11px;color:rgba(255,255,255,0.4);font-family:monospace;">
-              JONNY'S SOHO · 23 FRITH STREET, LONDON W1D 4RR · TEL: +44 20 7437 2300<br>
+              AMICA SOHO · 23 FRITH STREET, LONDON W1D 4RR · TEL: +44 20 7437 2300<br>
               CLUB SECRETARY & DPS: CHRISTIAN PETTITT
             </td>
           </tr>

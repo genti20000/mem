@@ -1,5 +1,5 @@
 /**
- * JONNY'S MEMBERS - State Management & Storage Service
+ * AMICA SOHO - State Management & Storage Service
  *
  * Implements persistent browser storage with automatic audit logging,
  * reactive subscriptions, and time simulation capabilities.
@@ -142,7 +142,11 @@ export function isTimeSimulationEnabled(): boolean {
 export const clubStore = {
   // Members
   getMembers(): Member[] {
-    return getItem(STORAGE_KEYS.MEMBERS, INITIAL_MEMBERS);
+    const raw = getItem(STORAGE_KEYS.MEMBERS, INITIAL_MEMBERS);
+    return raw.map((m) => ({
+      ...m,
+      memberNumber: m.memberNumber.replace(/^JNY-/i, 'AMC-'),
+    }));
   },
 
   getMemberById(id: string): Member | undefined {
@@ -234,13 +238,19 @@ export const clubStore = {
 
   // Staff & Auth
   getStaffList(): StaffUser[] {
-    return getItem(STORAGE_KEYS.STAFF, INITIAL_STAFF);
+    const list = getItem(STORAGE_KEYS.STAFF, INITIAL_STAFF);
+    return list.map((s) => ({
+      ...s,
+      id: s.id === 'staff-jonny' ? 'staff-amica' : s.id,
+      name: s.name.replace(/Jonny Thorne/gi, 'Amica Management'),
+    }));
   },
 
   getCurrentStaff(): StaffUser {
     const list = this.getStaffList();
     const storedId = localStorage.getItem(STORAGE_KEYS.CURRENT_STAFF_ID);
-    return list.find((s) => s.id === storedId) || list[1]; // default to Christian Pettitt (Manager)
+    const found = list.find((s) => s.id === storedId || (storedId === 'staff-jonny' && s.id === 'staff-amica'));
+    return found || list[0] || INITIAL_STAFF[0];
   },
 
   setCurrentStaff(staffId: string): void {
@@ -250,7 +260,13 @@ export const clubStore = {
 
   // Rules
   getRuleVersions(): ClubRuleVersion[] {
-    return getItem(STORAGE_KEYS.RULES, INITIAL_RULES);
+    const raw = getItem(STORAGE_KEYS.RULES, INITIAL_RULES);
+    return raw.map((r) => ({
+      ...r,
+      title: r.title.replace(/Jonny[’']?s(\s*Soho)?/gi, 'Amica Soho'),
+      summary: r.summary.replace(/Jonny[’']?s(\s*Soho)?/gi, 'Amica Soho'),
+      rules: r.rules.map((rule) => rule.replace(/Jonny[’']?s(\s*Soho)?/gi, 'Amica Soho')),
+    }));
   },
 
   getCurrentRuleVersion(): ClubRuleVersion {

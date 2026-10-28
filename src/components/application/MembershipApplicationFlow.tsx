@@ -28,6 +28,7 @@ import { SendPassModal } from '../cards/SendPassModal';
 import { PhotoCapture } from '../common/PhotoCapture';
 import { validate48HourWaitingPeriod } from '../../services/ruleEngine';
 import { getPublicRegistrationUrl, getMemberPassUrl } from '../../services/appleWallet';
+import { AmicaLuxuryRegistrationCard } from './AmicaLuxuryRegistrationCard';
 
 export interface MembershipApplicationFlowProps {
   isPublicPortal?: boolean;
@@ -40,6 +41,16 @@ export const MembershipApplicationFlow: React.FC<MembershipApplicationFlowProps>
   onOpenPass,
   onExitToStaffPortal,
 }) => {
+  if (isPublicPortal) {
+    return (
+      <AmicaLuxuryRegistrationCard
+        isPublicPortal={true}
+        onOpenPass={onOpenPass}
+        onExitToStaffPortal={onExitToStaffPortal}
+      />
+    );
+  }
+
   const currentRules = clubStore.getCurrentRuleVersion();
   const currentStaff = clubStore.getCurrentStaff();
   const isAdmin = !isPublicPortal && (currentStaff.role === 'admin' || currentStaff.role === 'manager');
@@ -110,15 +121,15 @@ export const MembershipApplicationFlow: React.FC<MembershipApplicationFlowProps>
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!agreeToRules || !privacyConsent) return;
+    if (!fullName.trim() || !email.trim() || !agreeToRules || !privacyConsent) return;
 
     const nowIso = new Date().toISOString();
-    const memberNumber = `JNY-${Math.floor(1000 + Math.random() * 9000)}`;
+    const memberNumber = `AMC-${Math.floor(1000 + Math.random() * 9000)}`;
 
     const ruleAcceptance: RuleAcceptance = {
       ruleVersion: currentRules.version,
       acceptedAt: nowIso,
-      applicantEmail: email || 'not-provided@guest.amica',
+      applicantEmail: email.trim().toLowerCase(),
     };
 
     // If Admin chooses to backdate to say it was completed 48 hours before
@@ -134,8 +145,8 @@ export const MembershipApplicationFlow: React.FC<MembershipApplicationFlowProps>
       id: `mem-${Date.now()}`,
       memberNumber,
       fullName: fullName.trim(),
-      dateOfBirth: dateOfBirth || '',
-      email: email.trim().toLowerCase() || '',
+      dateOfBirth: '',
+      email: email.trim().toLowerCase(),
       phone: phone.trim() || '',
       employer: employer.trim() || 'Hospitality Trade',
       hospitalityRole: hospitalityRole.trim() || 'Member',
@@ -382,85 +393,36 @@ export const MembershipApplicationFlow: React.FC<MembershipApplicationFlowProps>
 
   return (
     <div className="max-w-3xl mx-auto py-3 sm:py-4 px-3 sm:px-4 space-y-4 sm:space-y-6">
-      {/* Header Banner - High Design White Card Suite */}
-      <div className="rounded-2xl sm:rounded-3xl bg-white border border-[#EDE7DF] p-5 sm:p-7 shadow-xs">
-        <div className="flex items-center gap-2">
-          <span className="font-cinzel text-base sm:text-lg font-bold tracking-[0.2em] text-[#780C1E]">
-            AMICA SOHO
-          </span>
-          <span className="text-xs text-stone-300">·</span>
-          <span className="font-mono text-xs font-bold text-stone-500 uppercase">ADMISSIONS</span>
+      {/* Main Tab Switcher: Only shown in Staff Admin view */}
+      {!isPublicPortal && (
+        <div className="flex flex-wrap items-center gap-2.5 pb-2">
+          <button
+            type="button"
+            onClick={() => setPortalTab('new')}
+            className={`px-4 sm:px-5 py-2.5 rounded-xl font-mono text-xs sm:text-sm font-semibold transition-all cursor-pointer flex items-center gap-2 ${
+              portalTab === 'new'
+                ? 'bg-[#780C1E] text-white shadow-xs'
+                : 'bg-white text-stone-700 border border-[#EDE7DF] hover:bg-[#FAF8F5]'
+            }`}
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>New Application</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setPortalTab('existing')}
+            className={`px-4 sm:px-5 py-2.5 rounded-xl font-mono text-xs sm:text-sm font-semibold transition-all cursor-pointer flex items-center gap-2 ${
+              portalTab === 'existing'
+                ? 'bg-[#780C1E] text-white shadow-xs'
+                : 'bg-white text-stone-700 border border-[#EDE7DF] hover:bg-[#FAF8F5]'
+            }`}
+          >
+            <Search className="w-4 h-4" />
+            <span>Approval Queue & Search ({allMembers.length})</span>
+          </button>
         </div>
-        <div className="font-mono text-xs font-semibold text-stone-500 uppercase tracking-wide mt-1">
-          23 Frith Street · Soho W1D 4RR
-        </div>
-        <p className="text-xs sm:text-sm text-stone-600 max-w-2xl leading-relaxed mt-2 font-medium">
-          Aperitivo — Music — Late. Private membership register for 23 Frith Street Soho. Applications subject to statutory regulations under the Licensing Act 2003.
-        </p>
-
-        {/* Membership Sign-Up URL Link & QR Distribution Box */}
-        <div className="mt-5 p-4 sm:p-5 rounded-2xl bg-[#FAF8F5] border border-[#EDE7DF] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-[#780C1E] font-mono text-xs uppercase font-extrabold tracking-wider mb-1">
-              <Sparkles className="w-4 h-4 text-[#780C1E]" />
-              <span>{isPublicPortal ? 'Public Registration Link' : 'Membership Sign-Up Portal URL'}</span>
-            </div>
-            <p className="text-xs text-stone-500 font-mono">
-              {isPublicPortal
-                ? 'Share this registration link with friends or prospective member candidates.'
-                : 'Share or distribute this public URL on your website or social media.'}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2.5 shrink-0 w-full md:w-auto">
-            <div className="px-3.5 py-2 rounded-xl bg-white border border-[#EDE7DF] font-mono text-xs sm:text-sm font-bold text-stone-900 select-all flex-1 md:flex-none shadow-2xs truncate max-w-xs">
-              {getPublicRegistrationUrl()}
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                navigator.clipboard.writeText(getPublicRegistrationUrl());
-                setCopiedLink(true);
-                setTimeout(() => setCopiedLink(false), 3000);
-              }}
-              className="px-4 py-2 rounded-xl bg-[#780C1E] hover:bg-[#8E1026] text-white text-xs font-mono font-bold uppercase transition-all active:scale-95 cursor-pointer shadow-xs whitespace-nowrap"
-            >
-              {copiedLink ? 'Copied!' : 'Copy Link'}
-            </button>
-          </div>
-        </div>
-
-        {/* Main Tab Switcher: Only shown in Staff Admin view */}
-        {!isPublicPortal && (
-          <div className="mt-5 flex flex-wrap gap-2.5 pt-4 border-t border-[#F0EBE3]">
-            <button
-              type="button"
-              onClick={() => setPortalTab('new')}
-              className={`px-4 sm:px-5 py-2.5 rounded-xl font-mono text-xs sm:text-sm font-semibold transition-all cursor-pointer flex items-center gap-2 ${
-                portalTab === 'new'
-                  ? 'bg-[#780C1E] text-white shadow-xs'
-                  : 'bg-white text-stone-700 border border-[#EDE7DF] hover:bg-[#FAF8F5]'
-              }`}
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>New Application</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setPortalTab('existing')}
-              className={`px-4 sm:px-5 py-2.5 rounded-xl font-mono text-xs sm:text-sm font-semibold transition-all cursor-pointer flex items-center gap-2 ${
-                portalTab === 'existing'
-                  ? 'bg-[#780C1E] text-white shadow-xs'
-                  : 'bg-white text-stone-700 border border-[#EDE7DF] hover:bg-[#FAF8F5]'
-              }`}
-            >
-              <Search className="w-4 h-4" />
-              <span>Approval Queue & Search ({allMembers.length})</span>
-            </button>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* PORTAL VIEW 1: EXISTING / OLD APPLICATION LOOKUP & PHOTO MANAGEMENT */}
       {portalTab === 'existing' && (
@@ -480,14 +442,14 @@ export const MembershipApplicationFlow: React.FC<MembershipApplicationFlowProps>
                 <span>Find Existing Application</span>
               </label>
               <span className="text-[11px] text-stone-500 font-mono font-medium">
-                Search by Name, Reference No (e.g. JNY-), or Email
+                Search by Name, Reference No (e.g. AMC-), or Email
               </span>
             </div>
 
             <div className="relative">
               <input
                 type="text"
-                placeholder="Search applicant name, JNY- reference, or venue..."
+                placeholder="Search applicant name, AMC- reference, or venue..."
                 value={existingSearchQuery}
                 onChange={(e) => setExistingSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 bg-[#FAF8F5] border border-[#EDE7DF] rounded-xl text-sm sm:text-base text-stone-900 placeholder-stone-400 focus:outline-none focus:border-[#780C1E]"
@@ -641,178 +603,14 @@ export const MembershipApplicationFlow: React.FC<MembershipApplicationFlowProps>
         </div>
       )}
 
-      {/* PORTAL VIEW 2: NEW APPLICATION FORM */}
+      {/* PORTAL VIEW 2: OFFICIAL MEMBERSHIP PORTAL (EXACT PHOTO CARD) */}
       {portalTab === 'new' && (
-        <form onSubmit={handleSubmit} className="rounded-2xl sm:rounded-3xl bg-white border border-[#EDE7DF] p-5 sm:p-8 space-y-6 shadow-xs animate-fadeIn">
-          <h2 className="font-serif text-xl sm:text-2xl font-bold text-stone-900 pb-3 border-b border-[#F0EBE3]">
-            Applicant Profile
-          </h2>
-
-          {/* 1. Personal & Contact Details (DOB, Phone, Email Optional) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-mono uppercase tracking-wider text-stone-700 font-bold mb-1.5">
-                Full Legal Name *
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. Camilla Moreau"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-4 py-3 bg-[#FAF8F5] border border-[#EDE7DF] rounded-xl text-sm sm:text-base text-stone-900 placeholder-stone-400 focus:outline-none focus:border-[#780C1E]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-mono uppercase tracking-wider text-stone-700 font-bold mb-1.5">
-                Date of Birth (Optional)
-              </label>
-              <input
-                type="date"
-                value={dateOfBirth}
-                onChange={(e) => setDateOfBirth(e.target.value)}
-                className="w-full px-4 py-3 bg-[#FAF8F5] border border-[#EDE7DF] rounded-xl text-sm sm:text-base text-stone-900 focus:outline-none focus:border-[#780C1E]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-mono uppercase tracking-wider text-stone-700 font-bold mb-1.5">
-                Mobile Phone Number (Optional)
-              </label>
-              <input
-                type="tel"
-                placeholder="e.g. +44 7700 900142 (Optional)"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full px-4 py-3 bg-[#FAF8F5] border border-[#EDE7DF] rounded-xl text-sm sm:text-base text-stone-900 placeholder-stone-400 focus:outline-none focus:border-[#780C1E]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-mono uppercase tracking-wider text-stone-700 font-bold mb-1.5">
-                Email Address (Optional)
-              </label>
-              <input
-                type="email"
-                placeholder="e.g. c.moreau@quovadissoho.co.uk (Optional)"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-[#FAF8F5] border border-[#EDE7DF] rounded-xl text-sm sm:text-base text-stone-900 placeholder-stone-400 focus:outline-none focus:border-[#780C1E]"
-              />
-            </div>
-          </div>
-
-          {/* 2. Workplace Details (Optional) */}
-          <div className="pt-4 border-t border-[#F0EBE3] space-y-4">
-            <div className="text-xs font-mono uppercase tracking-wider text-stone-700 font-bold flex items-center gap-2">
-              <Briefcase className="w-4 h-4 text-[#780C1E]" />
-              <span>Work Place / Hospitality Details (Optional)</span>
-            </div>
-
-            <div>
-              <label className="block text-xs font-mono uppercase tracking-wider text-stone-600 font-semibold mb-1.5">
-                Work Place / Business Name (Optional)
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. Quo Vadis, Bar Termini, Soho House (Optional)"
-                value={employer}
-                onChange={(e) => setEmployer(e.target.value)}
-                className="w-full px-4 py-3 bg-[#FAF8F5] border border-[#EDE7DF] rounded-xl text-sm sm:text-base text-stone-900 placeholder-stone-400 focus:outline-none focus:border-[#780C1E]"
-              />
-            </div>
-
-            {/* Profile Photo */}
-            <div>
-              <PhotoCapture
-                currentPhotoUrl={photoUrl}
-                onPhotoCaptured={(newUrl) => {
-                  setPhotoUrl(newUrl);
-                }}
-                label="Member Profile Photo (Optional)"
-              />
-            </div>
-          </div>
-
-          {/* 3. Club Rules Agreement & Privacy */}
-          <div className="pt-4 border-t border-[#F0EBE3] space-y-4">
-            <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#EDE7DF]">
-              <h3 className="font-serif text-sm sm:text-base font-bold text-stone-900 mb-2 flex items-center justify-between">
-                <span>{currentRules.title} (Version {currentRules.version})</span>
-                <span className="text-xs font-mono text-stone-500 font-bold">Effective 2026</span>
-              </h3>
-              <div className="text-xs text-stone-600 leading-relaxed font-mono max-h-36 overflow-y-auto pr-2 space-y-1.5">
-                {currentRules.rules.map((rule, idx) => (
-                  <p key={idx}>{rule}</p>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  required
-                  checked={agreeToRules}
-                  onChange={(e) => setAgreeToRules(e.target.checked)}
-                  className="mt-1 h-5 w-5 rounded border-[#EDE7DF] text-[#780C1E] focus:ring-[#780C1E]"
-                />
-                <span className="text-xs sm:text-sm text-stone-700 leading-snug font-medium">
-                  I accept and agree to abide strictly by the Club Rules (Version {currentRules.version}), including the statutory <strong className="text-stone-900">01:00 AM strict last entry rule</strong> and mandatory <strong className="text-stone-900">01:30 AM guest departure rule</strong>.
-                </span>
-              </label>
-
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  required
-                  checked={privacyConsent}
-                  onChange={(e) => setPrivacyConsent(e.target.checked)}
-                  className="mt-1 h-5 w-5 rounded border-[#EDE7DF] text-[#780C1E] focus:ring-[#780C1E]"
-                />
-                <span className="text-xs sm:text-sm text-stone-700 leading-snug font-medium">
-                  I confirm that I am aged 18 or over. I consent to my membership credentials and door logs being held securely in compliance with the Licensing Act 2003.
-                </span>
-              </label>
-            </div>
-          </div>
-
-          {/* ADMIN OVERRIDE: Clean Single Checkbox Override */}
-          {isAdmin && (
-            <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-300 space-y-2 shadow-2xs">
-              <div className="flex items-center gap-2 text-xs sm:text-sm font-mono font-bold uppercase text-amber-900">
-                <Sparkles className="w-4 h-4 text-amber-700" />
-                <span>Admin Immediate Activation Override</span>
-              </div>
-              <label className="flex items-center gap-3 cursor-pointer pt-1">
-                <input
-                  type="checkbox"
-                  checked={adminBackdate48Hours}
-                  onChange={(e) => setAdminBackdate48Hours(e.target.checked)}
-                  className="h-5 w-5 rounded border-amber-400 text-amber-700 focus:ring-amber-500"
-                />
-                <span className="text-xs sm:text-sm font-bold text-amber-950">
-                  Immediate Active Approval (Bypass 48-Hour Waiting Period)
-                </span>
-              </label>
-            </div>
-          )}
-
-          {/* Submit Button */}
-          <div className="pt-2">
-            <button
-              type="submit"
-              disabled={!agreeToRules || !privacyConsent}
-              className="w-full py-4 rounded-2xl bg-[#780C1E] hover:bg-[#8E1026] text-white font-serif text-base sm:text-lg font-bold shadow-md disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-[0.99] cursor-pointer"
-            >
-              Submit Membership Application
-            </button>
-            <p className="text-center text-xs font-mono text-stone-400 font-medium mt-2">
-              All applications are subject to mandatory 48-hour statutory waiting period before manager review.
-            </p>
-          </div>
-        </form>
+        <div className="flex justify-center py-2 animate-fadeIn">
+          <AmicaLuxuryRegistrationCard
+            isAdminMode={isAdmin}
+            onOpenPass={onOpenPass}
+          />
+        </div>
       )}
 
       {isPublicPortal && onExitToStaffPortal && (

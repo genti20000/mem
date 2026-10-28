@@ -9,6 +9,7 @@ import { clubStore, subscribeToStore, getVenueCurrentDate } from './services/sto
 import { getNightModeState } from './services/ruleEngine';
 import { DoorReceptionView } from './components/door/DoorReceptionView';
 import { MembershipApplicationFlow } from './components/application/MembershipApplicationFlow';
+import { AmicaLuxuryRegistrationCard } from './components/application/AmicaLuxuryRegistrationCard';
 import { DigitalMemberCard } from './components/cards/DigitalMemberCard';
 import { AttendanceRegisterView } from './components/register/AttendanceRegisterView';
 import { IncidentLogView } from './components/incidents/IncidentLogView';
@@ -94,15 +95,14 @@ function resolveCurrentRoute(): RouteInfo {
     return { view: 'pass', passMemberNumber: passQueryParam };
   }
 
-  // 2. Saved Member Pass on mobile screen / PWA home screen icon
+  // 2. Saved Member Pass on mobile screen - ONLY when running in installed PWA standalone mode
   const savedPass = localStorage.getItem('amica_saved_member_pass');
-  const isPwaStandalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
-  const isExplicitStaffUrl =
-    ['/door', '/admin', '/ledger', '/occupancy', '/incidents', '/cards'].some((p) => pathname.startsWith(p)) ||
-    searchParams.has('staff') ||
-    searchParams.has('admin');
+  const isPwaStandalone =
+    typeof window !== 'undefined' &&
+    window.matchMedia &&
+    window.matchMedia('(display-mode: standalone)').matches;
 
-  if (savedPass && (isPwaStandalone || (!isExplicitStaffUrl && pathname === '/'))) {
+  if (savedPass && isPwaStandalone && pathname === '/') {
     return { view: 'pass', passMemberNumber: savedPass };
   }
 
@@ -243,45 +243,12 @@ export default function App() {
   // =========================================================================
   if (route.view === 'public_register') {
     return (
-      <div className="min-h-screen bg-[#FAF8F5] text-stone-900 font-sans antialiased flex flex-col justify-between py-6 px-3 sm:px-6">
-        {/* Public Header */}
-        <header className="max-w-2xl mx-auto w-full text-center mb-4 sm:mb-6">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#EDE7DF] shadow-2xs text-[10px] font-mono uppercase tracking-widest text-stone-600 mb-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-            <span>Official Membership Portal</span>
-          </div>
-          <div className="flex flex-col items-center">
-            <h1 className="font-cinzel text-xl sm:text-2xl font-bold tracking-[0.25em] text-[#780C1E]">
-              AMICA SOHO
-            </h1>
-            <span className="text-xs font-mono tracking-widest text-stone-500 uppercase mt-0.5">
-              23 Frith Street · Soho · London W1D 4RR
-            </span>
-          </div>
-        </header>
-
-        {/* Public Application Form Container */}
-        <main className="max-w-2xl mx-auto w-full flex-1">
-          <MembershipApplicationFlow
-            isPublicPortal={true}
-            onOpenPass={(memberNum) => navigate('pass', memberNum)}
-            onExitToStaffPortal={() => navigate('door')}
-          />
-        </main>
-
-        {/* Public Footer */}
-        <footer className="max-w-2xl mx-auto w-full text-center mt-8 pt-4 border-t border-[#EDE7DF] text-xs text-stone-400 font-mono space-y-1">
-          <div>Amica Soho · Westminster City Council Licensing Act 2003 Compliance</div>
-          <div>
-            <button
-              type="button"
-              onClick={() => navigate('door')}
-              className="text-[10px] text-stone-400 hover:text-stone-700 underline cursor-pointer"
-            >
-              Door Staff & Reception Login
-            </button>
-          </div>
-        </footer>
+      <div className="min-h-screen bg-[#070406] text-[#FAF7F2] font-sans antialiased flex flex-col justify-center items-center py-6 px-3 sm:px-6">
+        <AmicaLuxuryRegistrationCard
+          isPublicPortal={true}
+          onOpenPass={(memberNum) => navigate('pass', memberNum)}
+          onExitToStaffPortal={() => navigate('door')}
+        />
       </div>
     );
   }
@@ -346,7 +313,7 @@ export default function App() {
             AMICA SOHO
           </span>
           <span className="text-[9px] font-mono tracking-widest text-[#F5CE76]/70 uppercase">
-            JONNY’S LATE SHOW · PRIVATE SUITE
+            23 FRITH STREET · PRIVATE SUITE
           </span>
         </div>
 

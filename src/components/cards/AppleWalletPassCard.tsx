@@ -263,7 +263,7 @@ export const AppleWalletPassCard: React.FC<AppleWalletPassCardProps> = ({
                   23 Frith Street, Soho, London W1D 4RR
                 </div>
                 <div className="font-mono text-[10px] text-stone-300">
-                  Sub: Jonny&apos;s Late Show · Westminster Licensing Act 2003
+                  Amica Soho · Westminster Licensing Act 2003
                 </div>
               </div>
 

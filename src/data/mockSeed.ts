@@ -1,5 +1,5 @@
 /**
- * JONNY'S MEMBERS - Seed Data
+ * AMICA SOHO - Seed Data
  * Soho hospitality venue: 23 Frith Street, London W1D 4RR
  */
 
@@ -19,7 +19,7 @@ export const INITIAL_RULES: ClubRuleVersion[] = [
   {
     version: '1.0',
     effectiveDate: '2025-01-01T00:00:00Z',
-    title: 'Jonny’s Soho Club Rules (Founding Charter)',
+    title: 'Amica Soho Club Rules (Founding Charter)',
     summary: 'Initial membership rules and admission procedures.',
     rules: [
       'Members must be actively employed in the UK hospitality or food & beverage industry.',
@@ -30,7 +30,7 @@ export const INITIAL_RULES: ClubRuleVersion[] = [
   {
     version: '2.0',
     effectiveDate: '2026-01-15T00:00:00Z',
-    title: 'Jonny’s Soho Club Rules (Licensing Statutory Revision)',
+    title: 'Amica Soho Club Rules (Licensing Statutory Revision)',
     summary: 'Updated rules in accordance with Westminster Council Licensing conditions and premises operating schedule.',
     rules: [
       '1. Hospitality Qualification: All applicants must be actively employed in the hospitality industry at the time of application and provide verifiable employment evidence.',
@@ -47,8 +47,8 @@ export const INITIAL_RULES: ClubRuleVersion[] = [
 
 export const INITIAL_STAFF: StaffUser[] = [
   {
-    id: 'staff-jonny',
-    name: 'Jonny Thorne',
+    id: 'staff-amica',
+    name: 'Amica Management',
     role: 'admin',
     badgeNumber: 'A-001',
     pin: '1984',
@@ -98,7 +98,7 @@ function generateSeedFaceDescriptor(seed: number): number[] {
 export const INITIAL_MEMBERS: Member[] = [
   {
     id: 'mem-001',
-    memberNumber: 'JNY-0842',
+    memberNumber: 'AMC-0842',
     fullName: 'Camilla Moreau',
     dateOfBirth: '1991-04-18',
     email: 'c.moreau@quovadissoho.co.uk',
@@ -126,7 +126,7 @@ export const INITIAL_MEMBERS: Member[] = [
   },
   {
     id: 'mem-002',
-    memberNumber: 'JNY-0843',
+    memberNumber: 'AMC-0843',
     fullName: 'Sebastien Croft',
     dateOfBirth: '1988-11-09',
     email: 'seb@bartermini.london',
@@ -140,7 +140,7 @@ export const INITIAL_MEMBERS: Member[] = [
     appliedAt: hoursAgo(200),
     eligibleAt: hoursAgo(152),
     approvedAt: hoursAgo(150),
-    approvedBy: 'Jonny Thorne',
+    approvedBy: 'Amica Management',
     ruleAcceptance: {
       ruleVersion: '2.0',
       acceptedAt: hoursAgo(200),
@@ -153,7 +153,7 @@ export const INITIAL_MEMBERS: Member[] = [
   },
   {
     id: 'mem-003',
-    memberNumber: 'JNY-0844',
+    memberNumber: 'AMC-0844',
     fullName: 'Elena Rostova',
     dateOfBirth: '1994-07-22',
     email: 'elena.rostova@ronniescotts.co.uk',
@@ -179,7 +179,7 @@ export const INITIAL_MEMBERS: Member[] = [
   },
   {
     id: 'mem-004',
-    memberNumber: 'JNY-0845',
+    memberNumber: 'AMC-0845',
     fullName: 'Marcus Sterling',
     dateOfBirth: '1989-02-14',
     email: 'm.sterling@grouchoclub.com',
@@ -205,7 +205,7 @@ export const INITIAL_MEMBERS: Member[] = [
   },
   {
     id: 'mem-005',
-    memberNumber: 'JNY-0846',
+    memberNumber: 'AMC-0846',
     fullName: 'Harriet Vance',
     dateOfBirth: '1995-10-30',
     email: 'harriet@swiftsoho.com',
@@ -218,7 +218,7 @@ export const INITIAL_MEMBERS: Member[] = [
     appliedAt: hoursAgo(150),
     eligibleAt: hoursAgo(102),
     approvedAt: hoursAgo(100),
-    approvedBy: 'Jonny Thorne',
+    approvedBy: 'Amica Management',
     ruleAcceptance: {
       ruleVersion: '2.0',
       acceptedAt: hoursAgo(150),
@@ -231,7 +231,7 @@ export const INITIAL_MEMBERS: Member[] = [
   // Application currently in 48-Hour Waiting Period (Applied 35 hours ago, 13 hours left)
   {
     id: 'mem-006',
-    memberNumber: 'JNY-0847',
+    memberNumber: 'AMC-0847',
     fullName: 'Oliver Drake',
     dateOfBirth: '1996-03-12',
     email: 'oliver.drake@deansttownhouse.com',
@@ -254,7 +254,7 @@ export const INITIAL_MEMBERS: Member[] = [
   // Application completed 48h waiting period, ready for manager review
   {
     id: 'mem-007',
-    memberNumber: 'JNY-0848',
+    memberNumber: 'AMC-0848',
     fullName: 'Priya Nandakumar',
     dateOfBirth: '1993-08-04',
     email: 'priya@dishoom.com',
@@ -272,12 +272,12 @@ export const INITIAL_MEMBERS: Member[] = [
       acceptedAt: hoursAgo(52),
       applicantEmail: 'priya@dishoom.com',
     },
-    notes: 'Waiting period passed. Ready for Christian or Jonny to approve.',
+    notes: 'Waiting period passed. Ready for manager to approve.',
   },
   // Application suspended due to guest breach
   {
     id: 'mem-008',
-    memberNumber: 'JNY-0849',
+    memberNumber: 'AMC-0849',
     fullName: 'Arthur Pendelton',
     dateOfBirth: '1987-05-19',
     email: 'arthur.p@thefrenchhousesoho.com',
@@ -290,7 +290,7 @@ export const INITIAL_MEMBERS: Member[] = [
     appliedAt: hoursAgo(400),
     eligibleAt: hoursAgo(352),
     approvedAt: hoursAgo(350),
-    approvedBy: 'Jonny Thorne',
+    approvedBy: 'Amica Management',
     suspendedAt: hoursAgo(48),
     suspendedReason: 'Introduced an unregistered guest after 01:00 curfew in breach of Section 3.',
     ruleAcceptance: {
@@ -308,7 +308,7 @@ export const INITIAL_VISITS: VisitRecord[] = [
     attendeeType: 'member',
     memberId: 'mem-001',
     memberName: 'Camilla Moreau',
-    memberNumber: 'JNY-0842',
+    memberNumber: 'AMC-0842',
     guestNames: ['Lucia Rossi', 'Jean-Pierre Laurent'],
     checkInTime: hoursAgo(2.5),
     isCurrentlyInside: true,
@@ -322,7 +322,7 @@ export const INITIAL_VISITS: VisitRecord[] = [
     attendeeType: 'member',
     memberId: 'mem-002',
     memberName: 'Sebastien Croft',
-    memberNumber: 'JNY-0843',
+    memberNumber: 'AMC-0843',
     guestNames: ['David Thorne'],
     checkInTime: hoursAgo(3.2),
     isCurrentlyInside: true,
@@ -337,7 +337,7 @@ export const INITIAL_VISITS: VisitRecord[] = [
     attendeeType: 'member',
     memberId: 'mem-003',
     memberName: 'Elena Rostova',
-    memberNumber: 'JNY-0844',
+    memberNumber: 'AMC-0844',
     guestNames: [],
     checkInTime: hoursAgo(1.8),
     isCurrentlyInside: true,
@@ -351,7 +351,7 @@ export const INITIAL_VISITS: VisitRecord[] = [
     attendeeType: 'member',
     memberId: 'mem-004',
     memberName: 'Marcus Sterling',
-    memberNumber: 'JNY-0845',
+    memberNumber: 'AMC-0845',
     guestNames: ['Kavita Sharma', 'Nicholas Cole'],
     checkInTime: hoursAgo(2.1),
     isCurrentlyInside: true,
@@ -365,7 +365,7 @@ export const INITIAL_VISITS: VisitRecord[] = [
     attendeeType: 'member',
     memberId: 'mem-005',
     memberName: 'Harriet Vance',
-    memberNumber: 'JNY-0846',
+    memberNumber: 'AMC-0846',
     guestNames: ['Chloe Bennett'],
     checkInTime: hoursAgo(1.2),
     isCurrentlyInside: true,
@@ -454,7 +454,7 @@ export const INITIAL_SMOKING_PATRONS: SmokingPatron[] = [
   {
     id: 'smoke-06',
     visitId: 'vis-guest-anon',
-    name: 'James Wright (Member JNY-0810)',
+    name: 'James Wright (Member AMC-0810)',
     type: 'member',
     exitTimestamp: minutesAgo(1),
     expectedReturnMinutes: 10,
@@ -544,8 +544,8 @@ export const INITIAL_INCIDENTS: IncidentRecord[] = [
     description: 'Routine joint late-night licensing compliance inspection by Westminster City Council Licensing Inspector & Met Police Licensing Officer.',
     personsInvolved: 'Inspector R. Davies (Westminster) & Sgt. T. Brooks (Met Police)',
     actionTaken: 'Full digital register, 48-hour audit trail, and CCTV operation examined. All records verified compliant. Zero infractions noted.',
-    staffMemberId: 'staff-jonny',
-    staffMemberName: 'Jonny Thorne',
+    staffMemberId: 'staff-amica',
+    staffMemberName: 'Amica Management',
     cctvReference: 'CAM-01-ENTRANCE-0115',
     policeIncidentNumber: 'MET-WCC-INSP-902',
     isResolved: true,

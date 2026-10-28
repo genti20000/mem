@@ -1,5 +1,5 @@
 /**
- * JONNY'S MEMBERS - Core Domain Types
+ * AMICA SOHO - Core Domain Types
  * Private members' club operating from 23 Frith Street, Soho, London.
  */
 

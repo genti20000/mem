@@ -55,19 +55,17 @@ export function verifyMemberToken(
     return { isValid: false, reason: 'Empty QR code' };
   }
 
-  // Handle direct member number lookup or full token
-  if (tokenStr.startsWith('JNY-0') || tokenStr.startsWith('JNY-MEM-')) {
-    return { isValid: true, memberId: tokenStr };
-  }
-
+  // A typed name, membership number or arbitrary text is never a valid QR credential.
   const parts = tokenStr.split(':');
   if (parts.length !== 4 || parts[0] !== 'JNY-CARD') {
-    // Fallback: check if it's a plain member ID
-    return { isValid: true, memberId: tokenStr };
+    return { isValid: false, reason: 'Please present a valid membership QR code.' };
   }
 
   const [, memberId, epochStr, signature] = parts;
-  const tokenEpoch = parseInt(epochStr, 10);
+  if (!memberId || !/^\d{9,}$/.test(epochStr)) {
+    return { isValid: false, reason: 'Invalid QR credential format.' };
+  }
+  const tokenEpoch = Number(epochStr);
   const currentEpoch = Math.floor(nowMs / (60 * 1000));
 
   // Check signature match
@@ -77,14 +75,14 @@ export function verifyMemberToken(
   }
 
   // Check age: allowed within 2 minutes (current epoch or previous epoch)
-  if (currentEpoch - tokenEpoch > 2) {
+  if (currentEpoch - tokenEpoch > 1) {
     return {
       isValid: false,
       reason: 'Expired QR code (screenshot or cached card detected). Please refresh membership card.',
     };
   }
 
-  if (tokenEpoch > currentEpoch + 1) {
+  if (tokenEpoch > currentEpoch) {
     return { isValid: false, reason: 'Invalid future token timestamp.' };
   }
 
@@ -111,8 +109,7 @@ export function parseMemberFromQRToken(
   const matched = members.find(
     (m) =>
       m.id.toLowerCase() === normalized ||
-      m.memberNumber.toLowerCase() === normalized ||
-      m.fullName.toLowerCase() === normalized
+      m.memberNumber.toLowerCase() === normalized
   );
 
   if (!matched) {

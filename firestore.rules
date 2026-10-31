@@ -2,79 +2,50 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Global default deny
-    match /{document=**} {
-      allow read, write: if false;
-    }
-
-    // Helper functions
-    function isValidId(id) {
-      return id is string && id.size() > 0 && id.size() <= 128;
-    }
-
-    function incoming() {
-      return request.resource.data;
-    }
-
-    function existing() {
-      return resource.data;
-    }
-
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
+    // Legacy application is an archive until migrated and secured.
+    // All access requires an authenticated and verified Firebase admin account,
+    // explicitly provisioned through the protected /admins/{uid} collection.
     function isAdmin() {
-      return isSignedIn() && (
-        request.auth.token.email == 'londonkaraokeclubsoho@gmail.com' ||
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
-      );
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
-    // Connection validation test path
-    match /test/{docId} {
-      allow read, write: if true;
+    match /members/{id} {
+      allow read, create, update, delete: if isAdmin();
     }
 
-    // Members Directory & Applications
-    match /members/{memberId} {
-      allow read: if true;
-      allow create, update: if isValidId(memberId);
-      allow delete: if isAdmin();
+    match /visits/{id} {
+      allow read, create, update, delete: if isAdmin();
     }
 
-    // Door Visits & Attendance Register
-    match /visits/{visitId} {
-      allow read: if true;
-      allow create, update: if isValidId(visitId);
-      allow delete: if isAdmin();
-    }
-
-    // Incident Log Register
-    match /incidents/{incidentId} {
-      allow read: if true;
-      allow create, update: if isValidId(incidentId);
-      allow delete: if false; // Statutory audit requirement
-    }
-
-    // Door Access Control & Biometric Verification Logs
-    match /door_logs/{logId} {
-      allow read: if true;
-      allow create: if isValidId(logId);
-      allow update, delete: if false; // Statutory tamper-evident audit requirement
-    }
-
-    // Audit Logs & Hourly Capacity
-    match /audit_logs/{logId} {
-      allow read: if true;
-      allow create: if isValidId(logId);
+    match /incidents/{id} {
+      allow read, create: if isAdmin();
       allow update, delete: if false;
     }
 
-    // Club Rules Versions
-    match /club_rules/{ruleId} {
-      allow read: if true;
-      allow write: if isAdmin();
+    match /door_logs/{id} {
+      allow read, create: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    match /audit_logs/{id} {
+      allow read, create: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    match /club_rules/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    // Admin enrolment must occur via Firebase console or Admin SDK,
+    // never by a browser creating its own admin document.
+    match /admins/{id} {
+      allow read, write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

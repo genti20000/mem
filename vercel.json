@@ -1,0 +1,49 @@
+{
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/register",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/apply",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/join",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/pass",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/pass/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/door",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/cards",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/ledger",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/occupancy",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/incidents",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/admin",
+      "destination": "/index.html"
+    }
+  ]
+}

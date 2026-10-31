@@ -142,7 +142,7 @@ export function isTimeSimulationEnabled(): boolean {
 export const clubStore = {
   // Members
   getMembers(): Member[] {
-    const raw = getItem(STORAGE_KEYS.MEMBERS, INITIAL_MEMBERS);
+    const raw = getItem(STORAGE_KEYS.MEMBERS, [] as Member[]);
     return raw.map((m) => ({
       ...m,
       memberNumber: m.memberNumber.replace(/^JNY-/i, 'AMC-'),
@@ -296,7 +296,7 @@ export const clubStore = {
 
   // Visits & Attendance
   getVisits(): VisitRecord[] {
-    return getItem(STORAGE_KEYS.VISITS, INITIAL_VISITS);
+    return getItem(STORAGE_KEYS.VISITS, [] as VisitRecord[]);
   },
 
   saveVisit(visit: VisitRecord): void {
@@ -341,7 +341,7 @@ export const clubStore = {
 
   // Proprietor Guests
   getProprietorGuests(): ProprietorGuest[] {
-    return getItem(STORAGE_KEYS.PROPRIETOR_GUESTS, INITIAL_PROPRIETOR_GUESTS);
+    return getItem(STORAGE_KEYS.PROPRIETOR_GUESTS, [] as ProprietorGuest[]);
   },
 
   addProprietorGuest(guest: ProprietorGuest, manager: StaffUser): void {
@@ -381,7 +381,7 @@ export const clubStore = {
 
   // Smoking Management
   getSmokingPatrons(): SmokingPatron[] {
-    return getItem(STORAGE_KEYS.SMOKING, INITIAL_SMOKING_PATRONS);
+    return getItem(STORAGE_KEYS.SMOKING, [] as SmokingPatron[]);
   },
 
   markOutToSmoke(patron: {
@@ -492,7 +492,7 @@ export const clubStore = {
   },
 
   getHourlyCapacities(): CapacitySnapshot[] {
-    return getItem(STORAGE_KEYS.HOURLY_CAPACITIES, INITIAL_HOURLY_CAPACITIES);
+    return getItem(STORAGE_KEYS.HOURLY_CAPACITIES, [] as CapacitySnapshot[]);
   },
 
   recordHourlyCapacitySnapshot(): void {
@@ -516,7 +516,7 @@ export const clubStore = {
 
   // Incidents
   getIncidents(): IncidentRecord[] {
-    return getItem(STORAGE_KEYS.INCIDENTS, INITIAL_INCIDENTS);
+    return getItem(STORAGE_KEYS.INCIDENTS, [] as IncidentRecord[]);
   },
 
   addIncident(incident: IncidentRecord, staff: StaffUser): void {
@@ -541,7 +541,7 @@ export const clubStore = {
 
   // Audit Logs
   getAuditLogs(): AuditEvent[] {
-    return getItem(STORAGE_KEYS.AUDIT_LOGS, INITIAL_AUDIT_LOGS);
+    return getItem(STORAGE_KEYS.AUDIT_LOGS, [] as AuditEvent[]);
   },
 
   addAuditLog(entry: Omit<AuditEvent, 'id' | 'timestamp'>): void {
@@ -653,12 +653,7 @@ export async function initDatabaseSync(): Promise<void> {
       return;
     }
 
-    // 2. Seed initial cloud data if newly created collection
-    await seedInitialFirestoreData({
-      members: clubStore.getMembers(),
-      visits: clubStore.getVisits(),
-      incidents: clubStore.getIncidents(),
-    });
+    // Never seed mock member or attendance data into production Firestore.
 
     // 3. Set up two-way real-time Firestore listeners
     setupFirestoreRealtimeListeners({
